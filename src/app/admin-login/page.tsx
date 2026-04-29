@@ -30,11 +30,9 @@ export default function AdminLoginPage() {
       const data = res.data;
 
       if (data.success) {
-        // Store token in localStorage
         localStorage.setItem('adminToken', data.data.token);
         localStorage.setItem('adminUser', JSON.stringify(data.data));
-        
-        // Redirect to dashboard
+
         router.push('/dashboard');
       } else {
         setError(data.message || 'Invalid email or password');
@@ -54,7 +52,7 @@ export default function AdminLoginPage() {
 
       {/* Login Card */}
       <div className="w-full max-w-[420px] bg-[#1E2536] rounded-[24px] p-10 shadow-2xl relative z-10 border border-white/[0.05]">
-        
+
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-[64px] h-[64px] bg-gradient-to-tr from-[#1d4ed8] to-[#3b82f6] rounded-[20px] flex items-center justify-center mb-6 shadow-lg shadow-blue-500/20">
@@ -75,7 +73,7 @@ export default function AdminLoginPage() {
 
         {/* Form */}
         <form className="space-y-6" onSubmit={handleLogin}>
-          
+
           {/* Email Field */}
           <div>
             <label className="block text-slate-300 text-[13px] font-semibold mb-2">Administrator Email</label>
@@ -83,11 +81,11 @@ export default function AdminLoginPage() {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
               </div>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@heedy.com"
+                placeholder="Enter your email"
                 required
                 className="w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-4 border border-transparent focus:border-[#3b82f6] focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px]"
               />
@@ -101,15 +99,15 @@ export default function AdminLoginPage() {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
               </div>
-              <input 
-                type={showPassword ? "text" : "password"} 
+              <input
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 className="w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-11 border border-transparent focus:border-[#3b82f6] focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px]"
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors"
@@ -125,7 +123,7 @@ export default function AdminLoginPage() {
 
           {/* Submit Button */}
           <div className="pt-4">
-            <button 
+            <button
               type="submit"
               disabled={loading}
               className={`w-full h-[52px] bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-[14px] font-bold text-[15px] flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/25 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
