@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/auth/login`, { email, password });
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/auth/login`, { email, password }, { withCredentials: true });
       const data = res.data;
 
       if (data.success) {
