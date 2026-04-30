@@ -25,6 +25,7 @@ export default function BannersPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const fetchBanners = async () => {
     try {
@@ -49,6 +50,7 @@ export default function BannersPage() {
     setTitle('');
     setDescription('');
     setImage('');
+    setImageFile(null);
     setIsAddBannerOpen(true);
   };
 
@@ -57,22 +59,33 @@ export default function BannersPage() {
     setTitle(banner.title);
     setDescription(banner.description);
     setImage(banner.image);
+    setImageFile(null);
     setIsAddBannerOpen(true);
   };
 
   const handleClosePanel = () => {
     setIsAddBannerOpen(false);
     setEditingId(null);
+    setImageFile(null);
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !image) {
-      return toast.error('Title, description, and image URL are required');
+    if (!title || !description || (!image && !imageFile)) {
+      return toast.error('Title, description, and image are required');
     }
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     
-    const bannerData = { title, description, image, status: 'ACTIVE' };
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('status', 'ACTIVE');
+    
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else if (image) {
+      formData.append('image', image);
+    }
 
     try {
       const url = editingId 
@@ -84,10 +97,10 @@ export default function BannersPage() {
         method,
         url,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
         },
-        data: bannerData
+        data: formData
       });
       
       const data = res.data;
@@ -170,7 +183,11 @@ export default function BannersPage() {
                 ) : banners.map((banner) => (
                   <tr key={banner._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img src={banner.image} alt={banner.title} className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
+                      <img 
+                        src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image} 
+                        alt={banner.title} 
+                        className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
+                      />
                     </td>
                     <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{banner.title}</td>
                     <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug">{banner.description}</td>
@@ -237,24 +254,31 @@ export default function BannersPage() {
                 />
               </div>
 
-              {/* Banner Image URL */}
+              {/* Banner Image Upload */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Banner Image URL</label>
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Upload Image</label>
                 <input 
-                  type="text" 
-                  value={image}
-                  onChange={e => setImage(e.target.value)}
-                  placeholder="https://image-url.jpg"
-                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]" 
+                  type="file" 
+                  accept="image/*"
+                  onChange={e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setImageFile(e.target.files[0]);
+                      setImage('');
+                    }
+                  }}
+                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
                 />
+                {(image || imageFile) && (
+                  <div className="mt-4">
+                    <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
+                    <img 
+                      src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${image}` : image)} 
+                      alt="Preview" 
+                      className="h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
+                    />
+                  </div>
+                )}
               </div>
-
-              {/* Image Preview */}
-              {image && (
-                <div className="mt-4 rounded-[12px] overflow-hidden border border-slate-200">
-                  <img src={image} alt="Banner Preview" className="w-full h-auto object-cover" />
-                </div>
-              )}
 
               {/* Submit Button */}
               <div className="pt-2">

@@ -24,6 +24,7 @@ interface IProduct {
   keyFeatures?: string;
   images: string[];
   status: string;
+  showOnLandingPage?: boolean;
 }
 
 export default function ProductsPage() {
@@ -44,6 +45,7 @@ export default function ProductsPage() {
   const [reviewsCount, setReviewsCount] = useState(0);
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
+  const [showOnLandingPage, setShowOnLandingPage] = useState(false);
   const [imageUrls, setImageUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
@@ -94,6 +96,7 @@ export default function ProductsPage() {
     setReviewsCount(0);
     setOfferText('');
     setKeyFeatures('');
+    setShowOnLandingPage(false);
     setImageUrls('');
     setImageFiles([]);
     setVariants([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
@@ -109,6 +112,7 @@ export default function ProductsPage() {
     setReviewsCount(product.reviewsCount);
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
+    setShowOnLandingPage(product.showOnLandingPage || false);
     
     const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000';
     const fullImageUrls = product.images.map(url => url.startsWith('/uploads/') ? `${baseUrl}${url}` : url);
@@ -151,6 +155,7 @@ export default function ProductsPage() {
     formData.append('reviewsCount', String(reviewsCount));
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
+    formData.append('showOnLandingPage', String(showOnLandingPage));
 
     // Convert comma separated images to array
     const imagesArray = imageUrls.split(',').map(url => url.trim()).filter(url => url);
@@ -424,6 +429,20 @@ export default function ProductsPage() {
               <div>
                 <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Key Features (e.g. Brightens Skin)</label>
                 <input type="text" value={keyFeatures} onChange={e => setKeyFeatures(e.target.value)} placeholder="Main product benefit" className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-[15px]" />
+              </div>
+
+              {/* Show on Landing Page */}
+              <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-[12px] border border-slate-100">
+                <input 
+                  type="checkbox" 
+                  id="showOnLandingPage" 
+                  checked={showOnLandingPage} 
+                  onChange={(e) => setShowOnLandingPage(e.target.checked)} 
+                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="showOnLandingPage" className="text-[14px] font-bold text-slate-900 cursor-pointer">
+                  Show on Landing Page
+                </label>
               </div>
 
               {/* Image URLs & Files */}
