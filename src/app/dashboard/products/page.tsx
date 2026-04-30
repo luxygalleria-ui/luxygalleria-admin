@@ -45,6 +45,7 @@ export default function ProductsPage() {
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [imageUrls, setImageUrls] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
 
   // Fetch Products
@@ -94,6 +95,7 @@ export default function ProductsPage() {
     setOfferText('');
     setKeyFeatures('');
     setImageUrls('');
+    setImageFiles([]);
     setVariants([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
     setIsAddProductOpen(true);
   };
@@ -107,7 +109,12 @@ export default function ProductsPage() {
     setReviewsCount(product.reviewsCount);
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
-    setImageUrls(product.images.join(', '));
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000';
+    const fullImageUrls = product.images.map(url => url.startsWith('/uploads/') ? `${baseUrl}${url}` : url);
+    setImageUrls(fullImageUrls.join(', '));
+    
+    setImageFiles([]);
     // Provide a deep copy of variants to prevent mutating original state directly
     setVariants(product.variants.map(v => ({ volume: v.volume, price: v.price, oldPrice: v.oldPrice, stock: v.stock })));
     setIsAddProductOpen(true);
@@ -135,20 +142,27 @@ export default function ProductsPage() {
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('category', category);
+    formData.append('description', description);
+    formData.append('variants', JSON.stringify(variants));
+    formData.append('starRating', String(starRating));
+    formData.append('reviewsCount', String(reviewsCount));
+    formData.append('offerText', offerText);
+    formData.append('keyFeatures', keyFeatures);
+
     // Convert comma separated images to array
     const imagesArray = imageUrls.split(',').map(url => url.trim()).filter(url => url);
+    imagesArray.forEach(url => formData.append('images', url));
 
-    const productData = {
-      name,
-      category,
-      description,
-      variants,
-      starRating,
-      reviewsCount,
-      offerText,
-      keyFeatures,
-      images: imagesArray.length > 0 ? imagesArray : ['https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=100&auto=format&fit=crop'],
-    };
+    if (imageFiles.length > 0) {
+      imageFiles.forEach(file => {
+        formData.append('imageFiles', file);
+      });
+    } else if (imagesArray.length === 0) {
+      formData.append('images', 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=100&auto=format&fit=crop');
+    }
 
     try {
       const url = editingId 
@@ -160,10 +174,10 @@ export default function ProductsPage() {
         method,
         url,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
         },
-        data: productData
+        data: formData
       });
       
       const data = res.data;
@@ -251,10 +265,21 @@ export default function ProductsPage() {
                   <tr><td colSpan={6} className="py-8 text-center text-slate-500">Loading products...</td></tr>
                 ) : products.length === 0 ? (
                   <tr><td colSpan={6} className="py-8 text-center text-slate-500">No products found. Add your first product!</td></tr>
-                ) : products.map((product) => (
+                ) : products.map((product) => {
+                  const getImageUrl = (url: string) => {
+                    if (!url) return 'https://via.placeholder.com/50';
+                    if (url.startsWith('/uploads/')) {
+                      // Backend URL is usually something like http://localhost:5000/api, so we remove /api
+                      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000';
+                      return `${baseUrl}${url}`;
+                    }
+                    return url;
+                  };
+
+                  return (
                   <tr key={product._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img src={product.images[0] || 'https://via.placeholder.com/50'} alt={product.name} className="w-[50px] h-[50px] rounded-[10px] object-cover bg-slate-100" />
+                      <img src={getImageUrl(product.images[0])} alt={product.name} className="w-[50px] h-[50px] rounded-[10px] object-cover bg-slate-100" />
                     </td>
                     <td className="py-5 px-6 text-[15px] font-bold text-[#111827] leading-snug pr-8">{product.name}</td>
                     <td className="py-5 px-6 text-[15px] font-medium text-slate-600">{product.category}</td>
@@ -289,7 +314,8 @@ export default function ProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -400,9 +426,16 @@ export default function ProductsPage() {
                 <input type="text" value={keyFeatures} onChange={e => setKeyFeatures(e.target.value)} placeholder="Main product benefit" className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-[15px]" />
               </div>
 
-              {/* Image URLs */}
+              {/* Image URLs & Files */}
               <div>
-                <label className="block text-[13px] font-bold text-slate-900 mb-2.5">Image URLs (comma separated)</label>
+                <label className="block text-[13px] font-bold text-slate-900 mb-2.5">Upload Images</label>
+                <input type="file" multiple accept="image/*" onChange={e => {
+                  if (e.target.files) {
+                    setImageFiles(Array.from(e.target.files));
+                  }
+                }} className="w-full mb-3 text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+                
+                <label className="block text-[13px] font-bold text-slate-900 mb-2.5 mt-2">Or provide Image URLs (comma separated)</label>
                 <input type="text" value={imageUrls} onChange={e => setImageUrls(e.target.value)} placeholder="https://image1.jpg, https://image2.jpg" className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-[14px]" />
               </div>
             </div>
