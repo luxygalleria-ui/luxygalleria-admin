@@ -9,6 +9,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -22,6 +23,22 @@ export default function AdminLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    const errors: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      errors.email = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+    if (!password) {
+      errors.password = 'Password is required.';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters.';
+    }
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    
     setError('');
     setLoading(true);
 
@@ -84,12 +101,12 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({...prev, email: undefined})); }}
                 placeholder="Enter your email"
-                required
-                className="w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-4 border border-transparent focus:border-[#3b82f6] focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px]"
+                className={`w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-4 border focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px] ${fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-transparent focus:border-[#3b82f6]'}`}
               />
             </div>
+            {fieldErrors.email && <p className="text-red-400 text-xs mt-1.5 font-medium">{fieldErrors.email}</p>}
           </div>
 
           {/* Password Field */}
@@ -102,10 +119,9 @@ export default function AdminLoginPage() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({...prev, password: undefined})); }}
                 placeholder="••••••••"
-                required
-                className="w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-11 border border-transparent focus:border-[#3b82f6] focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px]"
+                className={`w-full h-[52px] bg-[#2A344A] text-white placeholder-slate-500 rounded-[14px] pl-11 pr-11 border focus:bg-[#2A344A] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-all text-[15px] ${fieldErrors.password ? 'border-red-500 focus:border-red-500' : 'border-transparent focus:border-[#3b82f6]'}`}
               />
               <button
                 type="button"
@@ -119,6 +135,7 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </div>
+            {fieldErrors.password && <p className="text-red-400 text-xs mt-1.5 font-medium">{fieldErrors.password}</p>}
           </div>
 
           {/* Submit Button */}
