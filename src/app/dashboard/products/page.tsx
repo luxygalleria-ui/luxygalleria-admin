@@ -235,7 +235,7 @@ export default function ProductsPage() {
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         
         {/* Left Column: Product Catalog */}
-        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300">
+        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300 xl:max-h-[calc(100vh-140px)] overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-[18px] font-semibold text-slate-800">Product Catalog</h2>
             {!isAddProductOpen ? (
@@ -432,18 +432,30 @@ export default function ProductsPage() {
               </div>
 
               {/* Show on Landing Page */}
-              <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-[12px] border border-slate-100">
-                <input 
-                  type="checkbox" 
-                  id="showOnLandingPage" 
-                  checked={showOnLandingPage} 
-                  onChange={(e) => setShowOnLandingPage(e.target.checked)} 
-                  className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-                <label htmlFor="showOnLandingPage" className="text-[14px] font-bold text-slate-900 cursor-pointer">
-                  Show on Landing Page
-                </label>
-              </div>
+              {(() => {
+                const currentLandingPageCount = products.filter(p => p.showOnLandingPage && p._id !== editingId).length;
+                const limitReached = currentLandingPageCount >= 5 && !showOnLandingPage;
+                return (
+                  <div className={`flex flex-col gap-1 bg-slate-50 p-4 rounded-[12px] border border-slate-100 ${limitReached ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="checkbox" 
+                        id="showOnLandingPage" 
+                        checked={showOnLandingPage}
+                        disabled={limitReached}
+                        onChange={(e) => setShowOnLandingPage(e.target.checked)} 
+                        className={`w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 ${limitReached ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      />
+                      <label htmlFor="showOnLandingPage" className={`text-[14px] font-bold text-slate-900 ${limitReached ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                        Show on Landing Page
+                      </label>
+                    </div>
+                    {limitReached && (
+                      <span className="text-[12px] font-medium text-red-500 ml-8">Maximum limit of 5 products reached.</span>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Image URLs & Files */}
               <div>
