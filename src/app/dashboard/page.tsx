@@ -50,7 +50,7 @@ export default function DashboardPage() {
   }, []);
 
   const getStatusStyle = (status: string) => {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'delivered': return 'bg-[#dcfce7] text-[#16a34a]';
       case 'processing': return 'bg-[#e0e7ff] text-[#4f46e5]';
       case 'shipped': return 'bg-[#dbeafe] text-[#2563eb]';
@@ -58,7 +58,16 @@ export default function DashboardPage() {
       default: return 'bg-slate-100 text-slate-600';
     }
   };
-
+  console.log("stats : ", stats)
+  console.log("recentOrders : ", stats?.recentOrders)
+  console.log("total revenue : ", stats?.totalRevenue)
+  console.log("total orders : ", stats?.totalOrders)
+  console.log("total products : ", stats?.totalProducts)
+  console.log("total categories : ", stats?.totalCategories)
+  console.log("total banners : ", stats?.totalBanners)
+  console.log("total coupons : ", stats?.totalCoupons)
+  console.log("total testimonials : ", stats?.totalTestimonials)
+  console.log("total customers : ", stats?.totalCustomers)
   const cards = [
     {
       label: 'Total Revenue',
@@ -163,7 +172,7 @@ export default function DashboardPage() {
           <h2 className="text-[20px] font-bold text-[#111827]">Recent Transactions</h2>
           <a href="/dashboard/orders" className="text-[15px] font-bold text-[#3b60f6] hover:text-blue-700">View All</a>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
