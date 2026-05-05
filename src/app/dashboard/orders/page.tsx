@@ -167,12 +167,12 @@ export default function OrdersPage() {
                       </td>
                       <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
                       <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
-                      <td className="py-5 px-6">
-                        <div className={`relative inline-block rounded-[6px] ${getStatusStyle(order.orderStatus)}`}>
+                      <td className="py-5 px-4 sm:px-6">
+                        <div className={`relative inline-flex items-center rounded-[6px] ${getStatusStyle(order.orderStatus)}`}>
                           <select 
                             value={order.orderStatus}
                             onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                            className="appearance-none pl-3 pr-8 py-1.5 w-full h-full bg-transparent text-inherit text-[12px] font-bold tracking-wide outline-none cursor-pointer"
+                            className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer"
                           >
                             <option value="processing" className="text-slate-800">Processing</option>
                             <option value="shipped" className="text-slate-800">Shipped</option>
