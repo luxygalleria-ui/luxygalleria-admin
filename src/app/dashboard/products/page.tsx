@@ -443,8 +443,8 @@ export default function ProductsPage() {
               </div>
 
               <div>
-                <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Key Features (e.g. Brightens Skin)</label>
-                <input type="text" value={keyFeatures} onChange={e => setKeyFeatures(e.target.value)} placeholder="Main product benefit" className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-[15px]" />
+                <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Key Features (Benefits, one per line or comma separated)</label>
+                <textarea value={keyFeatures} onChange={e => setKeyFeatures(e.target.value)} placeholder="e.g. Brightens Skin&#10;Reduces dark spots" className="w-full h-[100px] p-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-[15px]"></textarea>
               </div>
 
               {/* Show on Landing Page */}
