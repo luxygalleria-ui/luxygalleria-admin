@@ -9,7 +9,6 @@ interface IVariant {
   volume: string;
   price: number;
   oldPrice?: number;
-  stock: number;
 }
 
 interface IProduct {
@@ -41,14 +40,15 @@ export default function ProductsPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [starRating, setStarRating] = useState(5);
-  const [reviewsCount, setReviewsCount] = useState(0);
+  const [starRating, setStarRating] = useState<number | ''>(5);
+  const [reviewsCount, setReviewsCount] = useState<number | ''>(0);
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [showOnLandingPage, setShowOnLandingPage] = useState(false);
   const [imageUrls, setImageUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0 }]);
 
   // Fetch Products
   const fetchProducts = async () => {
@@ -99,7 +99,8 @@ export default function ProductsPage() {
     setShowOnLandingPage(false);
     setImageUrls('');
     setImageFiles([]);
-    setVariants([{ volume: '50ml', price: 0, oldPrice: 0, stock: 10 }]);
+    setPreviewUrls([]);
+    setVariants([{ volume: '50ml', price: 0, oldPrice: 0 }]);
     setIsAddProductOpen(true);
   };
 
@@ -119,14 +120,15 @@ export default function ProductsPage() {
     setImageUrls(fullImageUrls.join(', '));
     
     setImageFiles([]);
+    setPreviewUrls([]);
     // Provide a deep copy of variants to prevent mutating original state directly
-    setVariants(product.variants.map(v => ({ volume: v.volume, price: v.price, oldPrice: v.oldPrice, stock: v.stock })));
+    setVariants(product.variants.map(v => ({ volume: v.volume, price: v.price, oldPrice: v.oldPrice })));
     setIsAddProductOpen(true);
   };
 
   // Handle Add Variant
   const handleAddVariant = () => {
-    setVariants([...variants, { volume: '100ml', price: 0, oldPrice: 0, stock: 0 }]);
+    setVariants([...variants, { volume: '100ml', price: 0, oldPrice: 0 }]);
   };
 
   const handleVariantChange = (index: number, field: keyof IVariant, value: string | number) => {
@@ -140,9 +142,51 @@ export default function ProductsPage() {
     setVariants(newVariants);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      if (imageFiles.length + newFiles.length > 5) {
+        toast.error('You can upload a maximum of 5 images.');
+        return;
+      }
+      setImageFiles(prev => [...prev, ...newFiles]);
+      
+      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newPreviews]);
+    }
+    // reset input value so the same file can be selected again if removed
+    e.target.value = '';
+  };
+
+  const removeImageFile = (index: number) => {
+    const newFiles = [...imageFiles];
+    newFiles.splice(index, 1);
+    setImageFiles(newFiles);
+    
+    const newPreviews = [...previewUrls];
+    URL.revokeObjectURL(newPreviews[index]); // Free memory
+    newPreviews.splice(index, 1);
+    setPreviewUrls(newPreviews);
+  };
+
   // Handle Submit
   const handleSubmit = async () => {
-    if (!name || !description) return toast.error("Name and description are required.");
+    if (!name.trim() || !description.trim()) return toast.error("Name and description are required.");
+    if (!category) return toast.error("Category is required.");
+    if (variants.length === 0) return toast.error("At least one variant is required.");
+
+    for (let i = 0; i < variants.length; i++) {
+      const v = variants[i];
+      if (!v.volume.trim()) return toast.error(`Variant ${i + 1}: Size/Vol is required.`);
+      if (v.price <= 0) return toast.error(`Variant ${i + 1}: Offer Price must be greater than zero.`);
+      if (v.oldPrice && v.oldPrice > 0 && v.oldPrice < v.price) {
+        return toast.error(`Variant ${i + 1}: Actual Price (₹${v.oldPrice}) cannot be less than Offer Price (₹${v.price}).`);
+      }
+      }
+
+    if (starRating !== '' && (starRating < 0 || starRating > 5)) return toast.error("Star Rating must be between 0 and 5.");
+    if (reviewsCount !== '' && reviewsCount < 0) return toast.error("Reviews Count cannot be negative.");
+
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     
@@ -151,8 +195,8 @@ export default function ProductsPage() {
     formData.append('category', category);
     formData.append('description', description);
     formData.append('variants', JSON.stringify(variants));
-    formData.append('starRating', String(starRating));
-    formData.append('reviewsCount', String(reviewsCount));
+    formData.append('starRating', String(starRating === '' ? 0 : starRating));
+    formData.append('reviewsCount', String(reviewsCount === '' ? 0 : reviewsCount));
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
@@ -261,7 +305,7 @@ export default function ProductsPage() {
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[30%]">Name</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[12%]">Category</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[14%]">Starting Price</th>
-                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[12%]">Stock</th>
+
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[10%]">Status</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 rounded-r-[12px] w-[14%]">Actions</th>
                 </tr>
@@ -301,21 +345,7 @@ export default function ProductsPage() {
                         <span className="text-slate-400">-</span>
                       )}
                     </td>
-                    <td className="py-5 px-6">
-                      {(() => {
-                        const totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-                        const badgeColor = totalStock === 0
-                          ? 'bg-red-50 text-red-600'
-                          : totalStock <= 5
-                          ? 'bg-orange-50 text-orange-600'
-                          : 'bg-emerald-50 text-emerald-700';
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[13px] font-bold ${badgeColor}`}>
-                            {totalStock === 0 ? 'Out of Stock' : `${totalStock} units`}
-                          </span>
-                        );
-                      })()}
-                    </td>
+
                     <td className="py-5 px-6">
                       <span className="text-[15px] font-medium text-slate-600 w-12 block leading-tight">
                         {product.status}
@@ -397,24 +427,34 @@ export default function ProductsPage() {
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Size / Vol</div>
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Offer Price</div>
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actual Price</div>
-                  <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Stock</div>
+
                   {variants.length > 1 && <div className="w-8 shrink-0"></div>}
                 </div>
 
-                <div className="space-y-2">
-                  {variants.map((v, i) => (
-                    <div key={i} className="flex gap-2 items-center bg-slate-50 p-2 rounded-[12px] border border-slate-100">
-                      <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                      <input type="number" placeholder="₹ Offer" value={v.price === 0 ? '' : v.price} onChange={(e) => handleVariantChange(i, 'price', Number(e.target.value))} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                      <input type="number" placeholder="₹ Actual" value={v.oldPrice === 0 ? '' : v.oldPrice} onChange={(e) => handleVariantChange(i, 'oldPrice', Number(e.target.value))} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                      <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => handleVariantChange(i, 'stock', Number(e.target.value))} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                      {variants.length > 1 && (
-                        <button onClick={() => handleRemoveVariant(i)} className="w-8 h-[42px] shrink-0 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-[8px] transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {variants.map((v, i) => {
+                    const priceError = !!(v.oldPrice && v.oldPrice > 0 && v.oldPrice < v.price);
+                    return (
+                      <div key={i} className="flex flex-col gap-1">
+                        <div className={`flex gap-2 items-center bg-slate-50 p-2 rounded-[12px] border ${priceError ? 'border-red-200' : 'border-slate-100'}`}>
+                          <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
+                          <input type="number" placeholder="₹ Offer" value={v.price === 0 ? '' : v.price} onChange={(e) => handleVariantChange(i, 'price', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
+                          <input type="number" placeholder="₹ Actual" value={v.oldPrice === 0 ? '' : v.oldPrice} onChange={(e) => handleVariantChange(i, 'oldPrice', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
+
+                          {variants.length > 1 && (
+                            <button onClick={() => handleRemoveVariant(i)} className="w-8 h-[42px] shrink-0 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-[8px] transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                          )}
+                        </div>
+                        {priceError && (
+                          <span className="text-[12px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">
+                            Actual Price cannot be less than Offer Price
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -428,11 +468,11 @@ export default function ProductsPage() {
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Star Rating</label>
-                  <input type="number" max="5" min="0" step="0.1" value={starRating} onChange={e => setStarRating(Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
+                  <input type="number" max="5" min="0" step="0.1" value={starRating} onChange={e => setStarRating(e.target.value === '' ? '' : Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Reviews Count</label>
-                  <input type="number" value={reviewsCount} onChange={e => setReviewsCount(Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
+                  <input type="number" value={reviewsCount} onChange={e => setReviewsCount(e.target.value === '' ? '' : Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
                 </div>
               </div>
 
@@ -475,14 +515,48 @@ export default function ProductsPage() {
 
               {/* Image URLs & Files */}
               <div>
-                <label className="block text-[13px] font-bold text-slate-900 mb-2.5">Upload Images</label>
-                <input type="file" multiple accept="image/*" onChange={e => {
-                  if (e.target.files) {
-                    setImageFiles(Array.from(e.target.files));
-                  }
-                }} className="w-full mb-3 text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="block text-[14px] font-bold text-slate-900">Upload Images (Max 5)</label>
+                  <span className="text-[12px] font-medium text-slate-500">{imageFiles.length}/5 selected</span>
+                </div>
                 
-                <label className="block text-[13px] font-bold text-slate-900 mb-2.5 mt-2">Or provide Image URLs (comma separated)</label>
+                <div className="border-2 border-dashed border-slate-200 rounded-[12px] p-6 text-center hover:bg-slate-50 transition-colors relative mb-4">
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*" 
+                    onChange={handleImageChange} 
+                    disabled={imageFiles.length >= 5}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                  />
+                  <div className="flex flex-col items-center gap-2 pointer-events-none">
+                    <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    </div>
+                    <p className="text-[14px] font-medium text-slate-600">
+                      {imageFiles.length >= 5 ? 'Maximum limit reached' : 'Click or drag files here to upload'}
+                    </p>
+                    <p className="text-[12px] text-slate-400">JPG, PNG, WEBP up to 5MB each</p>
+                  </div>
+                </div>
+
+                {previewUrls.length > 0 && (
+                  <div className="grid grid-cols-5 gap-3 mb-4">
+                    {previewUrls.map((url, index) => (
+                      <div key={index} className="relative aspect-square rounded-[8px] overflow-hidden border border-slate-200 group">
+                        <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => removeImageFile(index)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <label className="block text-[13px] font-bold text-slate-900 mb-2.5 mt-4 pt-4 border-t border-slate-100">Or provide Image URLs (comma separated)</label>
                 <input type="text" value={imageUrls} onChange={e => setImageUrls(e.target.value)} placeholder="https://image1.jpg, https://image2.jpg" className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-[14px]" />
               </div>
             </div>

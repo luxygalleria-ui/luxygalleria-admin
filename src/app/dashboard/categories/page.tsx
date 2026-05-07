@@ -23,6 +23,8 @@ export default function CategoriesPage() {
   // Form State
   const [name, setName] = useState('');
   const [image, setImage] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [status, setStatus] = useState('ACTIVE');
 
   // Fetch Categories
@@ -48,6 +50,8 @@ export default function CategoriesPage() {
     setEditingId(null);
     setName('');
     setImage('');
+    setImageFile(null);
+    setPreviewUrl('');
     setStatus('ACTIVE');
     setIsAddCategoryOpen(true);
   };
@@ -55,17 +59,32 @@ export default function CategoriesPage() {
   const handleEdit = (category: ICategory) => {
     setEditingId(category._id);
     setName(category.name);
-    setImage(category.image);
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000';
+    const fullImageUrl = category.image?.startsWith('/uploads/') ? `${baseUrl}${category.image}` : category.image;
+    setImage(fullImageUrl || '');
+    
+    setImageFile(null);
+    setPreviewUrl('');
     setStatus(category.status);
     setIsAddCategoryOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (!name || !image) return toast.error('Name and Image URL are required');
+    if (!name) return toast.error('Name is required');
+    if (!image && !imageFile && !editingId) return toast.error('Image is required');
+    
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     
-    const categoryData = { name, image, status };
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('status', status);
+    if (imageFile) {
+      formData.append('imageFile', imageFile);
+    } else if (image) {
+      formData.append('image', image);
+    }
 
     try {
       const url = editingId 
@@ -77,10 +96,10 @@ export default function CategoriesPage() {
         method,
         url,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
         },
-        data: categoryData
+        data: formData
       });
       
       const data = res.data;
@@ -163,7 +182,7 @@ export default function CategoriesPage() {
                 ) : categories.map((category) => (
                   <tr key={category._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img src={category.image || 'https://via.placeholder.com/54'} alt={category.name} className="w-[54px] h-[54px] rounded-[12px] object-cover bg-slate-100 shadow-sm" />
+                      <img src={(category.image?.startsWith('/uploads/') ? (`${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${category.image}`) : category.image) || 'https://via.placeholder.com/54'} alt={category.name} className="w-[54px] h-[54px] rounded-[12px] object-cover bg-slate-100 shadow-sm" />
                     </td>
                     <td className="py-5 px-6 text-[15px] font-bold text-[#111827]">{category.name}</td>
                     <td className="py-5 px-6">
@@ -239,16 +258,33 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              {/* Image URL */}
+              {/* Image Upload */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Image URL</label>
-                <input 
-                  type="text" 
-                  value={image}
-                  onChange={e => setImage(e.target.value)}
-                  placeholder="https://image-url.jpg"
-                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]" 
-                />
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Category Image</label>
+                <div className="flex items-center gap-6">
+                  <div className="w-[80px] h-[80px] rounded-[16px] border border-slate-200 overflow-hidden shrink-0 bg-slate-50 flex items-center justify-center">
+                    {(previewUrl || image) ? (
+                      <img src={previewUrl || image} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setImageFile(file);
+                          setPreviewUrl(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="w-full text-[14px] file:mr-4 file:py-2.5 file:px-5 file:rounded-[10px] file:border-0 file:text-sm file:font-semibold file:bg-[#eff6ff] file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
+                    />
+                    <p className="text-[12px] text-slate-500 mt-2">Recommended: 400x400px. JPG, PNG, WEBP.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Create/Update Button */}

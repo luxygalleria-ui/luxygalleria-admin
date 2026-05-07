@@ -9,6 +9,7 @@ interface IBanner {
   title: string;
   description: string;
   image: string;
+  mobileImage?: string;
   status: string;
 }
 
@@ -26,6 +27,8 @@ export default function BannersPage() {
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [mobileImage, setMobileImage] = useState('');
+  const [mobileImageFile, setMobileImageFile] = useState<File | null>(null);
 
   const fetchBanners = async () => {
     try {
@@ -51,6 +54,8 @@ export default function BannersPage() {
     setDescription('');
     setImage('');
     setImageFile(null);
+    setMobileImage('');
+    setMobileImageFile(null);
     setIsAddBannerOpen(true);
   };
 
@@ -60,6 +65,8 @@ export default function BannersPage() {
     setDescription(banner.description);
     setImage(banner.image);
     setImageFile(null);
+    setMobileImage(banner.mobileImage || '');
+    setMobileImageFile(null);
     setIsAddBannerOpen(true);
   };
 
@@ -67,11 +74,12 @@ export default function BannersPage() {
     setIsAddBannerOpen(false);
     setEditingId(null);
     setImageFile(null);
+    setMobileImageFile(null);
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || (!image && !imageFile)) {
-      return toast.error('Title, description, and image are required');
+    if (!title || !description || (!image && !imageFile) || (!mobileImage && !mobileImageFile)) {
+      return toast.error('Title, description, and both images are required');
     }
     setSaving(true);
     const token = localStorage.getItem('adminToken');
@@ -85,6 +93,12 @@ export default function BannersPage() {
       formData.append('image', imageFile);
     } else if (image) {
       formData.append('image', image);
+    }
+    
+    if (mobileImageFile) {
+      formData.append('mobileImage', mobileImageFile);
+    } else if (mobileImage) {
+      formData.append('mobileImage', mobileImage);
     }
 
     try {
@@ -169,9 +183,9 @@ export default function BannersPage() {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[25%]">Preview</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[25%]">Title</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[35%]">Description</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[35%]">Preview</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[20%]">Title</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[30%]">Description</th>
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-r-[12px] w-[15%]">Actions</th>
                 </tr>
               </thead>
@@ -183,11 +197,26 @@ export default function BannersPage() {
                 ) : banners.map((banner) => (
                   <tr key={banner._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img 
-                        src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image} 
-                        alt={banner.title} 
-                        className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
-                      />
+                      <div className="flex gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] text-slate-500 font-semibold uppercase">Laptop</span>
+                          <img 
+                            src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image} 
+                            alt={banner.title} 
+                            className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
+                          />
+                        </div>
+                        {banner.mobileImage && (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] text-slate-500 font-semibold uppercase">Mobile</span>
+                            <img 
+                              src={banner.mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.mobileImage}` : banner.mobileImage} 
+                              alt={`${banner.title} mobile`} 
+                              className="w-[40px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
+                            />
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{banner.title}</td>
                     <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug">{banner.description}</td>
@@ -254,9 +283,9 @@ export default function BannersPage() {
                 />
               </div>
 
-              {/* Banner Image Upload */}
+              {/* Laptop Image Upload */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Upload Image</label>
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Laptop Size Photo</label>
                 <input 
                   type="file" 
                   accept="image/*"
@@ -274,7 +303,33 @@ export default function BannersPage() {
                     <img 
                       src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${image}` : image)} 
                       alt="Preview" 
-                      className="h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
+                      className="w-full h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Image Upload */}
+              <div>
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Phone Size Photo</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setMobileImageFile(e.target.files[0]);
+                      setMobileImage('');
+                    }
+                  }}
+                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
+                />
+                {(mobileImage || mobileImageFile) && (
+                  <div className="mt-4">
+                    <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
+                    <img 
+                      src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${mobileImage}` : mobileImage)} 
+                      alt="Mobile Preview" 
+                      className="w-[120px] h-[180px] rounded-lg object-cover border border-slate-200 shadow-sm"
                     />
                   </div>
                 )}
