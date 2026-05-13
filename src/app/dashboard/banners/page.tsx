@@ -81,6 +81,17 @@ export default function BannersPage() {
     if (!title || !description || (!image && !imageFile) || (!mobileImage && !mobileImageFile)) {
       return toast.error('Title, description, and both images are required');
     }
+
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
+
+    if (imageFile && imageFile.size > MAX_FILE_SIZE) {
+      return toast.error('Laptop image size must be less than 3MB');
+    }
+
+    if (mobileImageFile && mobileImageFile.size > MAX_FILE_SIZE) {
+      return toast.error('Phone image size must be less than 3MB');
+    }
+
     setSaving(true);
     const token = localStorage.getItem('adminToken');
     
@@ -291,7 +302,13 @@ export default function BannersPage() {
                   accept="image/*"
                   onChange={e => {
                     if (e.target.files && e.target.files.length > 0) {
-                      setImageFile(e.target.files[0]);
+                      const file = e.target.files[0];
+                      if (file.size > 3 * 1024 * 1024) {
+                        toast.error('Image size must be less than 3MB');
+                        e.target.value = '';
+                        return;
+                      }
+                      setImageFile(file);
                       setImage('');
                     }
                   }}
@@ -317,7 +334,13 @@ export default function BannersPage() {
                   accept="image/*"
                   onChange={e => {
                     if (e.target.files && e.target.files.length > 0) {
-                      setMobileImageFile(e.target.files[0]);
+                      const file = e.target.files[0];
+                      if (file.size > 3 * 1024 * 1024) {
+                        toast.error('Image size must be less than 3MB');
+                        e.target.value = '';
+                        return;
+                      }
+                      setMobileImageFile(file);
                       setMobileImage('');
                     }
                   }}
