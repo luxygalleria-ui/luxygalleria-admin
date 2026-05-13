@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 interface OrderItem {
   product: {
@@ -43,9 +45,11 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -61,6 +65,13 @@ export default function OrdersPage() {
     };
   };
 
+  const handleAuthError = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    toast.error('Session expired. Please log in again.');
+    router.push('/admin-login');
+  };
+
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -68,8 +79,11 @@ export default function OrdersPage() {
       if (res.data.success) {
         setOrders(res.data.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch orders', err);
+      if (err.response?.status === 401) {
+        handleAuthError();
+      }
     } finally {
       setLoading(false);
     }
@@ -78,7 +92,7 @@ export default function OrdersPage() {
   const activeOrder = orders.find(o => o._id === selectedOrder);
 
   const getStatusStyle = (status: string) => {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'delivered':
         return 'bg-[#dcfce7] text-[#16a34a]';
       case 'pending':
@@ -95,18 +109,29 @@ export default function OrdersPage() {
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
+    if (updatingOrderId === id) return; // Prevent duplicate requests
+
     try {
+      setUpdatingOrderId(id);
       const res = await axios.put(`${API_URL}/v1/payments/admin/orders/${id}/status`, {
         orderStatus: newStatus
       }, getAuthHeaders());
+
       if (res.data.success) {
-        setOrders(orders.map(order => 
+        setOrders(prevOrders => prevOrders.map(order =>
           order._id === id ? { ...order, orderStatus: newStatus } : order
         ));
+        toast.success(`Order status updated to ${newStatus}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update order status', err);
-      alert('Failed to update order status');
+      if (err.response?.status === 401) {
+        handleAuthError();
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to update order status');
+      }
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -129,13 +154,13 @@ export default function OrdersPage() {
   return (
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
-        
+
         {/* Left Column: Orders List */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
           <div className="mb-8">
             <h2 className="text-[16px] font-medium text-slate-800">All Orders</h2>
           </div>
-          
+
           {orders.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
               <p className="text-lg font-medium">No orders yet</p>
@@ -168,25 +193,33 @@ export default function OrdersPage() {
                       <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
                       <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
                       <td className="py-5 px-4 sm:px-6">
-                        <div className={`relative inline-flex items-center rounded-[6px] ${getStatusStyle(order.orderStatus)}`}>
-                          <select 
+                        <div className={`relative inline-flex items-center rounded-[6px] ${getStatusStyle(order.orderStatus)} ${updatingOrderId === order._id ? 'opacity-70 pointer-events-none' : ''}`}>
+                          <select
                             value={order.orderStatus}
                             onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                            className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer"
+                            disabled={updatingOrderId === order._id}
+                            className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer disabled:cursor-not-allowed"
                           >
                             <option value="processing" className="text-slate-800">Processing</option>
                             <option value="shipped" className="text-slate-800">Shipped</option>
                             <option value="delivered" className="text-slate-800">Delivered</option>
                             <option value="cancelled" className="text-slate-800">Cancelled</option>
                           </select>
-                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-inherit">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-inherit flex items-center justify-center">
+                            {updatingOrderId === order._id ? (
+                              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{formatDate(order.createdAt)}</td>
                       <td className="py-5 px-6">
-                        <button 
+                        <button
                           onClick={() => setSelectedOrder(order._id)}
                           className="text-[#3b82f6] hover:text-blue-700 transition-colors flex items-center justify-center p-2 rounded-full hover:bg-blue-50"
                         >
@@ -203,11 +236,11 @@ export default function OrdersPage() {
 
         {/* Right Column: Order Details Form */}
         {activeOrder && (
-          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
+          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[0px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-6 lg:px-8 py-6 shrink-0">
               <h2 className="text-[22px] font-bold text-[#111827]">Order Details</h2>
-              <button 
+              <button
                 onClick={() => setSelectedOrder(null)}
                 className="w-[32px] h-[32px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               >
@@ -217,7 +250,7 @@ export default function OrdersPage() {
 
             {/* Scrollable Details */}
             <div className="flex-1 overflow-y-auto px-6 lg:px-8 pb-8 space-y-6 form-scrollbar">
-              
+
               {/* Order Information */}
               <div>
                 <h3 className="text-[16px] font-bold text-[#111827] mb-3">Order Information</h3>
@@ -233,9 +266,8 @@ export default function OrdersPage() {
                   <p>Payment: {activeOrder.paymentMethod}</p>
                   <div className="flex items-center gap-2">
                     <span>Payment Status:</span>
-                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${
-                      activeOrder.paymentStatus === 'completed' ? 'bg-[#dcfce7] text-[#16a34a]' : 'bg-[#fef3c7] text-[#d97706]'
-                    }`}>
+                    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${activeOrder.paymentStatus === 'completed' ? 'bg-[#dcfce7] text-[#16a34a]' : 'bg-[#fef3c7] text-[#d97706]'
+                      }`}>
                       {activeOrder.paymentStatus}
                     </span>
                   </div>
@@ -307,7 +339,7 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
-        
+
       </div>
     </div>
   );
