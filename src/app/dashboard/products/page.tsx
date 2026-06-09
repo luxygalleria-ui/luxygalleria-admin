@@ -24,6 +24,8 @@ interface IProduct {
   images: string[];
   status: string;
   showOnLandingPage?: boolean;
+  stock?: number;
+  weight?: number;
 }
 
 export default function ProductsPage() {
@@ -45,6 +47,8 @@ export default function ProductsPage() {
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [showOnLandingPage, setShowOnLandingPage] = useState(false);
+  const [stock, setStock] = useState<number>(0);
+  const [weight, setWeight] = useState<number>(0);
   const [imageUrls, setImageUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -97,6 +101,8 @@ export default function ProductsPage() {
     setOfferText('');
     setKeyFeatures('');
     setShowOnLandingPage(false);
+    setStock(0);
+    setWeight(0);
     setImageUrls('');
     setImageFiles([]);
     setPreviewUrls([]);
@@ -114,6 +120,8 @@ export default function ProductsPage() {
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
     setShowOnLandingPage(product.showOnLandingPage || false);
+    setStock(product.stock || 0);
+    setWeight(product.weight || 0);
     
     const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000';
     const fullImageUrls = product.images.map(url => url.startsWith('/uploads/') ? `${baseUrl}${url}` : url);
@@ -169,6 +177,10 @@ export default function ProductsPage() {
     setPreviewUrls(newPreviews);
   };
 
+  const displayPreviewUrls = imageFiles.length > 0
+    ? previewUrls
+    : imageUrls.split(',').map((url) => url.trim()).filter((url) => url);
+
   // Handle Submit
   const handleSubmit = async () => {
     if (!name.trim() || !description.trim()) return toast.error("Name and description are required.");
@@ -200,6 +212,8 @@ export default function ProductsPage() {
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
+    formData.append('stock', String(stock));
+    formData.append('weight', String(weight));
 
     // Convert comma separated images to array
     const imagesArray = imageUrls.split(',').map(url => url.trim()).filter(url => url);
@@ -305,7 +319,7 @@ export default function ProductsPage() {
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[30%]">Name</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[12%]">Category</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[14%]">Starting Price</th>
-
+                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[10%]">Stock / Wt</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[10%]">Status</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 rounded-r-[12px] w-[14%]">Actions</th>
                 </tr>
@@ -344,6 +358,12 @@ export default function ProductsPage() {
                       ) : (
                         <span className="text-slate-400">-</span>
                       )}
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[14px] font-medium text-slate-600">Stock: {product.stock || 0}</span>
+                        <span className="text-[13px] text-slate-400">Wt: {product.weight || 0}kg</span>
+                      </div>
                     </td>
 
                     <td className="py-5 px-6">
@@ -476,6 +496,18 @@ export default function ProductsPage() {
                 </div>
               </div>
 
+              {/* Stock & Weight */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Stock</label>
+                  <input type="number" min="0" value={stock} onChange={e => setStock(Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Weight (in Kg)</label>
+                  <input type="number" min="0" step="0.1" value={weight} onChange={e => setWeight(Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
+                </div>
+              </div>
+
               {/* Offer Text & Key Features */}
               <div>
                 <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Offer Text (e.g. FLAT 35% OFF)</label>
@@ -540,9 +572,9 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
-                {previewUrls.length > 0 && (
+                {displayPreviewUrls.length > 0 && (
                   <div className="grid grid-cols-5 gap-3 mb-4">
-                    {previewUrls.map((url, index) => (
+                    {displayPreviewUrls.map((url, index) => (
                       <div key={index} className="relative aspect-square rounded-[8px] overflow-hidden border border-slate-200 group">
                         <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" />
                         <button 

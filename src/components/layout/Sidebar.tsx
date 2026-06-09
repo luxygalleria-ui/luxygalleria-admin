@@ -31,29 +31,14 @@ const navItems = [
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
   },
   {
-    name: 'Coupons',
-    href: '/dashboard/coupons',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /><path d="M13 5v2" /><path d="M13 17v2" /><path d="M13 11v2" /></svg>
-  },
-  {
-    name: 'Testimonials',
-    href: '/dashboard/testimonials',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-  },
-  {
     name: 'Customers',
     href: '/dashboard/customers',
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
   },
   {
-    name: 'Contacts',
-    href: '/dashboard/contacts',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-  },
-  {
-    name: 'FAQs',
-    href: '/dashboard/faqs',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+    name: 'Settings',
+    href: '/dashboard/settings',
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   },
 ];
 
@@ -77,7 +62,7 @@ function SidebarNav({ onNavClick, onLogout }: { onNavClick: () => void; onLogout
                 href={item.href}
                 onClick={onNavClick}
                 className={`flex items-center justify-between px-4 py-[14px] rounded-[14px] transition-colors ${isActive
-                    ? 'bg-blue-600 text-white font-semibold'
+                    ? 'bg-[#8B5E34] text-white font-semibold'
                     : 'text-slate-400 hover:text-white font-medium'
                   }`}
               >
@@ -113,7 +98,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
-    router.push('/admin-login');
+    document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    router.push('/login');
   };
 
   return (
@@ -121,10 +107,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* ===== DESKTOP SIDEBAR (always visible, in-flow) ===== */}
       <aside className="hidden lg:flex w-[260px] bg-[#0f172a] text-slate-300 flex-col shrink-0">
         <div className="flex items-center gap-4 h-[100px] px-8 shrink-0">
-          <div className="w-[42px] h-[42px] rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold text-xl shrink-0">
-            H
-          </div>
-          <h1 className="text-[17px] font-bold text-white tracking-wide">HEEDY ADMIN</h1>
+          <Link href="/dashboard" className="relative w-40 h-12 flex items-center">
+            <img 
+              src="/luxy_logo.png" 
+              alt="Luxy Galleria" 
+              className="object-contain w-full h-full brightness-0 invert" 
+            />
+          </Link>
         </div>
         <SidebarNav onNavClick={() => { }} onLogout={handleLogout} />
       </aside>
@@ -144,10 +133,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex items-center justify-between h-[72px] px-6 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-[42px] h-[42px] rounded-xl bg-blue-500 flex items-center justify-center text-white font-bold text-xl shrink-0">
-              H
-            </div>
-            <h1 className="text-[17px] font-bold text-white tracking-wide">HEEDY ADMIN</h1>
+            <Link href="/dashboard" className="relative w-32 h-10 flex items-center">
+              <img 
+                src="/luxy_logo.png" 
+                alt="Luxy Galleria" 
+                className="object-contain w-full h-full brightness-0 invert" 
+              />
+            </Link>
           </div>
           <button
             onClick={onClose}

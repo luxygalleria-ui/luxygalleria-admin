@@ -68,8 +68,9 @@ export default function OrdersPage() {
   const handleAuthError = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminUser');
+    document.cookie = 'adminToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     toast.error('Session expired. Please log in again.');
-    router.push('/admin-login');
+    router.push('/login');
   };
 
   const fetchOrders = async () => {

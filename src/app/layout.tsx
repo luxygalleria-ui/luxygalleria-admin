@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Heedy Admin",
-  description: "Admin panel for Heedy platform",
+  title: "Luxy Galleria Admin",
+  description: "Admin panel for Luxy Galleria - Premium imported drinks, snacks & more.",
 };
 
 export default function RootLayout({

@@ -5,10 +5,8 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Frontend route protection logic
   // Check for the presence of an auth token cookie set by the login process
-  // const isAuthenticated = request.cookies.has('auth_token');
-  const isAuthenticated = true; // Placeholder for actual auth check
+  const isAuthenticated = request.cookies.has('adminToken');
   
   const isAuthPage = pathname.startsWith('/login');
   

@@ -14,8 +14,6 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   else if (pathname.includes('/categories')) title = 'Categories';
   else if (pathname.includes('/orders')) title = 'Orders';
   else if (pathname.includes('/banners')) title = 'Banners';
-  else if (pathname.includes('/coupons')) title = 'Coupons';
-  else if (pathname.includes('/testimonials')) title = 'Testimonials';
   else if (pathname.includes('/customers')) title = 'Customers';
 
   return (

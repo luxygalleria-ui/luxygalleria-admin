@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 // Create an Axios instance for frontend API calls to the external backend
+const rawBackendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND_BASE = rawBackendUrl
+  ? rawBackendUrl.replace(/\/$/, '').replace(/\/api\/?$/, '/api/v1')
+  : 'http://localhost:5000/api/v1';
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+  baseURL: BACKEND_BASE,
   headers: {
     'Content-Type': 'application/json',
   },

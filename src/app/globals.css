@@ -2,6 +2,15 @@
 
 @theme inline {
   --font-sans: var(--font-inter);
+
+  /* Override default blue with Luxy colors */
+  --color-blue-50: #FAF8F5;
+  --color-blue-100: #F5F1E8;
+  --color-blue-400: #C9A961;
+  --color-blue-500: #A68B5B; /* Primary */
+  --color-blue-600: #8B5E34; /* Hover state */
+  --color-blue-700: #6B5344; /* Active/Dark state */
+  --color-blue-800: #4A3A2C;
 }
 
 @layer base {

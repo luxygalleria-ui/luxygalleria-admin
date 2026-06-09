@@ -17,8 +17,6 @@ interface DashboardStats {
   totalProducts: number;
   totalCategories: number;
   totalBanners: number;
-  totalCoupons: number;
-  totalTestimonials: number;
   totalCustomers: number;
   recentOrders: RecentOrder[];
 }
@@ -65,8 +63,6 @@ export default function DashboardPage() {
   console.log("total products : ", stats?.totalProducts)
   console.log("total categories : ", stats?.totalCategories)
   console.log("total banners : ", stats?.totalBanners)
-  console.log("total coupons : ", stats?.totalCoupons)
-  console.log("total testimonials : ", stats?.totalTestimonials)
   console.log("total customers : ", stats?.totalCustomers)
   const cards = [
     {
@@ -114,24 +110,7 @@ export default function DashboardPage() {
       iconBg: 'bg-[#fae8ff]',
       iconColor: 'text-[#c026d3]'
     },
-    {
-      label: 'Coupons',
-      value: stats ? String(stats.totalCoupons) : '...',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>
-      ),
-      iconBg: 'bg-[#ffedd5]',
-      iconColor: 'text-[#ea580c]'
-    },
-    {
-      label: 'Testimonials',
-      value: stats ? String(stats.totalTestimonials) : '...',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-      ),
-      iconBg: 'bg-transparent',
-      iconColor: 'text-[#111827]'
-    },
+
     {
       label: 'Customers',
       value: stats ? String(stats.totalCustomers) : '...',
