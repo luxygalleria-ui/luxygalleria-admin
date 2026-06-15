@@ -30,7 +30,7 @@ export default function FaqsPage() {
   const fetchFaqs = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/faqs/admin`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;
@@ -121,7 +121,7 @@ export default function FaqsPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/faqs/admin/${deleteModal.faqId}`, {
+      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin/${deleteModal.faqId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;

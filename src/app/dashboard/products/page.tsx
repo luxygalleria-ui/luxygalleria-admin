@@ -59,7 +59,7 @@ export default function ProductsPage() {
   // Fetch Products
   const fetchProducts = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/products`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/products`);
       const data = res.data;
       if (data.success) {
         setProducts(data.data);
@@ -73,7 +73,7 @@ export default function ProductsPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/categories`);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`);
       const data = res.data;
       if (data.success) {
         setDbCategories(data.data);
@@ -231,8 +231,8 @@ export default function ProductsPage() {
 
     try {
       const url = editingId 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/products/${editingId}` 
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/products`;
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/products/${editingId}` 
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/products`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -271,7 +271,7 @@ export default function ProductsPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/v1/products/${deleteModal.productId}`, {
+      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/products/${deleteModal.productId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;

@@ -72,27 +72,29 @@ export default function SettingsManager() {
       <h2 className="text-2xl font-bold mb-4">Settings</h2>
       
       <div className="space-y-4">
-        <div className="p-4 border rounded bg-gray-50">
+          <div className="p-4 border rounded bg-gray-50">
           <h3 className="font-bold mb-3">Top Banner</h3>
+          <p className="text-xs text-gray-500 mb-3">Each new line = a separate banner sentence. Use Enter/Return to add multiple lines.</p>
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium mb-1">Banner Text</label>
-              <input
-                type="text"
+              <textarea
+                rows={4}
                 value={settings.bannerText}
                 onChange={e => setSettings({ ...settings, bannerText: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="e.g., Get 20% off on all items!"
+                className="w-full border rounded px-3 py-2 resize-y font-mono text-sm"
+                placeholder={"Free delivery on orders above ₹999\nShop premium imported snacks now\n🎉 New arrivals every week!"}
               />
+              <p className="text-xs text-gray-400 mt-1">Preview: {settings.bannerText.split('\n').filter(Boolean).length} line(s)</p>
             </div>
-            <label className="flex items-center">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.isBannerActive}
                 onChange={e => setSettings({ ...settings, isBannerActive: e.target.checked })}
-                className="mr-2"
+                className="w-4 h-4"
               />
-              Show Banner
+              <span className="text-sm font-medium">Show Banner on Website</span>
             </label>
           </div>
         </div>
