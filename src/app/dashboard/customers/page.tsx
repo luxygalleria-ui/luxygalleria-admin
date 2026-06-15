@@ -33,7 +33,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/v1/users/admin/customers`, getAuthHeaders());
+      const res = await axios.get(`${API_URL}/users/admin/customers`, getAuthHeaders());
       if (res.data.success) {
         setCustomers(res.data.data);
       }
@@ -46,7 +46,7 @@ export default function CustomersPage() {
 
   const toggleCustomerStatus = async (id: string) => {
     try {
-      const res = await axios.put(`${API_URL}/v1/users/admin/customers/${id}/toggle-status`, {}, getAuthHeaders());
+      const res = await axios.put(`${API_URL}/users/admin/customers/${id}/toggle-status`, {}, getAuthHeaders());
       if (res.data.success) {
         setCustomers(customers.map(customer => 
           customer._id === id ? { ...customer, isActive: !customer.isActive } : customer
@@ -64,7 +64,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const res = await axios.delete(`${API_URL}/v1/users/admin/customers/${id}`, getAuthHeaders());
+      const res = await axios.delete(`${API_URL}/users/admin/customers/${id}`, getAuthHeaders());
       if (res.data.success) {
         setCustomers(customers.filter(customer => customer._id !== id));
         alert('Customer deleted successfully');

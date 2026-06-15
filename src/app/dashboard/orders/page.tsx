@@ -79,7 +79,7 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/v1/payments/admin/orders`, getAuthHeaders());
+      const res = await axios.get(`${API_URL}/payments/admin/orders`, getAuthHeaders());
       if (res.data.success) {
         setOrders(res.data.data);
       }
@@ -117,7 +117,7 @@ export default function OrdersPage() {
 
     try {
       setUpdatingOrderId(id);
-      const res = await axios.put(`${API_URL}/v1/payments/admin/orders/${id}/status`, {
+      const res = await axios.put(`${API_URL}/payments/admin/orders/${id}/status`, {
         orderStatus: newStatus
       }, getAuthHeaders());
 
@@ -148,7 +148,7 @@ export default function OrdersPage() {
 
     try {
       setDeleting(true);
-      const res = await axios.delete(`${API_URL}/v1/payments/admin/orders/${deleteModal.orderId}`, getAuthHeaders());
+      const res = await axios.delete(`${API_URL}/payments/admin/orders/${deleteModal.orderId}`, getAuthHeaders());
       
       if (res.data.success) {
         setOrders(prevOrders => prevOrders.filter(order => order._id !== deleteModal.orderId));

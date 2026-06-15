@@ -31,7 +31,7 @@ export default function DashboardPage() {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('adminToken');
-        const res = await axios.get(`${API_URL}/v1/dashboard/stats`, {
+        const res = await axios.get(`${API_URL}/dashboard/stats`, {
           withCredentials: true,
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
