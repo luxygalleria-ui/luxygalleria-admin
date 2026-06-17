@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import apiClient from '../services/apiClient';
 
 interface TextBanner {
   _id?: string;
@@ -37,7 +35,7 @@ export default function TextBannerManager() {
   const fetchBanners = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/banners`);
+      const response = await apiClient.get('/banners');
       setBanners(response.data.data || []);
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -53,15 +51,10 @@ export default function TextBannerManager() {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('token');
       if (editingId) {
-        await axios.put(`${API_URL}/banners/${editingId}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.put(`/banners/${editingId}`, formData);
       } else {
-        await axios.post(`${API_URL}/banners`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.post('/banners', formData);
       }
       setEditingId(null);
       setFormData({
@@ -82,10 +75,7 @@ export default function TextBannerManager() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_URL}/banners/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.delete(`/banners/${id}`);
         fetchBanners();
       } catch (error) {
         console.error('Error deleting banner:', error);

@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import apiClient from '../services/apiClient';
 
 interface Product {
   _id: string;
@@ -25,7 +23,7 @@ export default function StockWeightManager() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/products`);
+      const response = await apiClient.get('/products');
       setProducts(response.data.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -41,10 +39,7 @@ export default function StockWeightManager() {
 
   const handleSave = async (productId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/products/${productId}`, editData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.put(`/products/${productId}`, editData);
       setEditingId(null);
       fetchProducts();
     } catch (error) {

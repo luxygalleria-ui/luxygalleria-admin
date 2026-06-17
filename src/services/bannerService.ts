@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+import apiClient from './apiClient';
 
 export interface Banner {
   _id?: string;
@@ -14,17 +12,15 @@ export interface Banner {
 export const bannerService = {
   // Get all banners
   async getBanners() {
-    const response = await axios.get(`${API_URL}/banners`);
+    const response = await apiClient.get('/banners');
     return response.data;
   },
 
   // Create new banner
   async createBanner(data: FormData) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const response = await axios.post(`${API_URL}/banners`, data, {
+    const response = await apiClient.post('/banners', data, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
       },
     });
     return response.data;
@@ -32,11 +28,9 @@ export const bannerService = {
 
   // Update banner
   async updateBanner(id: string, data: FormData) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const response = await axios.put(`${API_URL}/banners/${id}`, data, {
+    const response = await apiClient.put(`/banners/${id}`, data, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`,
       },
     });
     return response.data;
@@ -44,12 +38,7 @@ export const bannerService = {
 
   // Delete banner
   async deleteBanner(id: string) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const response = await axios.delete(`${API_URL}/banners/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.delete(`/banners/${id}`);
     return response.data;
   },
 };

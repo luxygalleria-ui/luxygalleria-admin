@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 import { toast } from 'react-hot-toast';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 
@@ -54,19 +54,9 @@ export default function OrdersPage() {
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, orderId: string | null}>({ isOpen: false, orderId: null });
   const [deleting, setDeleting] = useState(false);
 
-  const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   useEffect(() => {
     fetchOrders();
   }, []);
-
-  const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
-    return {
-      withCredentials: true,
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    };
-  };
 
   const handleAuthError = () => {
     localStorage.removeItem('adminToken');
@@ -79,7 +69,7 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/payments/admin/orders`, getAuthHeaders());
+      const res = await axios.get('/payments/admin/orders');
       if (res.data.success) {
         setOrders(res.data.data);
       }
@@ -117,9 +107,9 @@ export default function OrdersPage() {
 
     try {
       setUpdatingOrderId(id);
-      const res = await axios.put(`${API_URL}/payments/admin/orders/${id}/status`, {
+      const res = await axios.put(`/payments/admin/orders/${id}/status`, {
         orderStatus: newStatus
-      }, getAuthHeaders());
+      });
 
       if (res.data.success) {
         setOrders(prevOrders => prevOrders.map(order =>
@@ -148,7 +138,7 @@ export default function OrdersPage() {
 
     try {
       setDeleting(true);
-      const res = await axios.delete(`${API_URL}/payments/admin/orders/${deleteModal.orderId}`, getAuthHeaders());
+      const res = await axios.delete(`/payments/admin/orders/${deleteModal.orderId}`);
       
       if (res.data.success) {
         setOrders(prevOrders => prevOrders.filter(order => order._id !== deleteModal.orderId));
