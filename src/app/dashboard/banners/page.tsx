@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 
 interface IBanner {
   _id: string;
@@ -32,7 +32,7 @@ export default function BannersPage() {
 
   const fetchBanners = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`);
+      const res = await axios.get(`/banners`);
       const data = res.data;
       if (data.success) {
         setBanners(data.data);
@@ -114,8 +114,8 @@ export default function BannersPage() {
 
     try {
       const url = editingId 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners/${editingId}` 
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/banners`;
+        ? `/banners/${editingId}` 
+        : `/banners`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -153,7 +153,7 @@ export default function BannersPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/banners/${deleteModal.bannerId}`, {
+      const res = await axios.delete(`/banners/${deleteModal.bannerId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 
 interface ITestimonial {
   _id: string;
@@ -33,7 +33,7 @@ export default function TestimonialsPage() {
 
   const fetchTestimonials = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/testimonials`);
+      const res = await axios.get(`/testimonials`);
       const data = res.data;
       if (data.success) {
         setTestimonials(data.data);
@@ -87,8 +87,8 @@ export default function TestimonialsPage() {
 
     try {
       const url = editingId 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/testimonials/${editingId}` 
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/testimonials`;
+        ? `/testimonials/${editingId}` 
+        : `/testimonials`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -126,7 +126,7 @@ export default function TestimonialsPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/testimonials/${deleteModal.reviewId}`, {
+      const res = await axios.delete(`/testimonials/${deleteModal.reviewId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;

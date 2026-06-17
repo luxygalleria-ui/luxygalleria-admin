@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 
 interface ICategory {
@@ -31,7 +31,7 @@ export default function CategoriesPage() {
   // Fetch Categories
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`);
+      const res = await axios.get(`/categories`);
       const data = res.data;
       if (data.success) {
         setCategories(data.data);
@@ -87,8 +87,8 @@ export default function CategoriesPage() {
 
     try {
       const url = editingId 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/categories/${editingId}` 
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/categories`;
+        ? `/categories/${editingId}` 
+        : `/categories`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -127,7 +127,7 @@ export default function CategoriesPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/categories/${deleteModal.categoryId}`, {
+      const res = await axios.delete(`/categories/${deleteModal.categoryId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;

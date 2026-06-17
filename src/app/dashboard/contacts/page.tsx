@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 import { Mail, Phone, Calendar, Check, Trash2 } from 'lucide-react';
 
 interface IContact {
@@ -25,7 +25,7 @@ export default function ContactsPage() {
   const fetchContacts = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contacts`, {
+      const res = await axios.get(`/contacts`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;
@@ -47,7 +47,7 @@ export default function ContactsPage() {
   const handleMarkAsRead = async (id: string) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.put(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contacts/${id}/read`, {}, {
+      const res = await axios.put(`/contacts/${id}/read`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -69,7 +69,7 @@ export default function ContactsPage() {
     setDeleting(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contacts/${deleteModal.contactId}`, {
+      const res = await axios.delete(`/contacts/${deleteModal.contactId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.data.success) {

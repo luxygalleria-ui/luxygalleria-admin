@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 
 interface Customer {
   _id: string;
@@ -15,8 +15,6 @@ interface Customer {
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
@@ -33,7 +31,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/users/admin/customers`, getAuthHeaders());
+      const res = await axios.get(`/users/admin/customers`, getAuthHeaders());
       if (res.data.success) {
         setCustomers(res.data.data);
       }
@@ -46,7 +44,7 @@ export default function CustomersPage() {
 
   const toggleCustomerStatus = async (id: string) => {
     try {
-      const res = await axios.put(`${API_URL}/users/admin/customers/${id}/toggle-status`, {}, getAuthHeaders());
+      const res = await axios.put(`/users/admin/customers/${id}/toggle-status`, {}, getAuthHeaders());
       if (res.data.success) {
         setCustomers(customers.map(customer => 
           customer._id === id ? { ...customer, isActive: !customer.isActive } : customer
@@ -64,7 +62,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const res = await axios.delete(`${API_URL}/users/admin/customers/${id}`, getAuthHeaders());
+      const res = await axios.delete(`/users/admin/customers/${id}`, getAuthHeaders());
       if (res.data.success) {
         setCustomers(customers.filter(customer => customer._id !== id));
         alert('Customer deleted successfully');

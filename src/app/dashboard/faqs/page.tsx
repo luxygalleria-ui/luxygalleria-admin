@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import axios from '../../../services/apiClient';
 
 interface IFaq {
   _id: string;
@@ -30,7 +30,7 @@ export default function FaqsPage() {
   const fetchFaqs = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin`, {
+      const res = await axios.get(`/faqs/admin`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;
@@ -73,7 +73,7 @@ export default function FaqsPage() {
 
   const handleSubmit = async () => {
     if (!question || !answer) {
-      return toast.error('Question and answer are required');
+      return toast.error('Question and Answer are required');
     }
     setSaving(true);
     const token = localStorage.getItem('adminToken');
@@ -82,8 +82,8 @@ export default function FaqsPage() {
 
     try {
       const url = editingId
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin/${editingId}`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin`;
+        ? `/faqs/admin/${editingId}`
+        : `/faqs/admin`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -121,7 +121,7 @@ export default function FaqsPage() {
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`${process.env.NEXT_PUBLIC_BACKEND_URL}/faqs/admin/${deleteModal.faqId}`, {
+      const res = await axios.delete(`/faqs/admin/${deleteModal.faqId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;
