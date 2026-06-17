@@ -107,11 +107,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* ===== DESKTOP SIDEBAR (always visible, in-flow) ===== */}
       <aside className="hidden lg:flex w-[260px] bg-[#0f172a] text-slate-300 flex-col shrink-0">
         <div className="flex items-center gap-4 h-[100px] px-8 shrink-0 sticky top-0 bg-[#0f172a] z-10 border-b border-slate-800">
-          <Link href="/dashboard" className="relative w-40 h-12 flex items-center bg-white rounded-xl p-1.5 shadow-sm">
+          <Link href="/dashboard" className="relative w-40 h-16 flex items-center">
             <img 
               src="/luxy_logo.png" 
               alt="Luxy Galleria" 
-              className="object-contain w-full h-full" 
+              className="object-contain w-full h-full brightness-0 invert" 
             />
           </Link>
         </div>
@@ -133,11 +133,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         <div className="flex items-center justify-between h-[80px] px-6 shrink-0 sticky top-0 bg-[#0f172a] z-10 border-b border-slate-800">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="relative w-36 h-10 flex items-center bg-white rounded-lg p-1.5 shadow-sm">
+            <Link href="/dashboard" className="relative w-36 h-14 flex items-center">
               <img 
                 src="/luxy_logo.png" 
                 alt="Luxy Galleria" 
-                className="object-contain w-full h-full" 
+                className="object-contain w-full h-full brightness-0 invert" 
               />
             </Link>
           </div>

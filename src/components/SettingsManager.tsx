@@ -1,15 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
-const rawApiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-const API_URL = rawApiUrl.replace(/\/+$/, '');
-const API_BASE = API_URL.endsWith('/api/v1')
-  ? API_URL
-  : API_URL.endsWith('/api')
-    ? `${API_URL}/v1`
-    : `${API_URL}/api/v1`;
+import axios from '../services/apiClient';
 
 interface Settings {
   _id?: string;
@@ -39,7 +31,7 @@ export default function SettingsManager() {
 
   const fetchSettings = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/settings`);
+      const response = await axios.get('/settings');
       setSettings(response.data.data || settings);
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -51,10 +43,7 @@ export default function SettingsManager() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = localStorage.getItem('adminToken');
-      await axios.put(`${API_BASE}/settings`, settings, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put('/settings', settings);
       alert('Settings updated successfully!');
     } catch (error: any) {
       console.error('Error saving settings:', error);
@@ -119,41 +108,6 @@ export default function SettingsManager() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Primary Color</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={settings.primaryColor}
-              onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-              className="w-16 h-10 border rounded cursor-pointer"
-            />
-            <input
-              type="text"
-              value={settings.primaryColor}
-              onChange={e => setSettings({ ...settings, primaryColor: e.target.value })}
-              className="flex-1 border rounded px-3 py-2"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Secondary Color</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={settings.secondaryColor}
-              onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-              className="w-16 h-10 border rounded cursor-pointer"
-            />
-            <input
-              type="text"
-              value={settings.secondaryColor}
-              onChange={e => setSettings({ ...settings, secondaryColor: e.target.value })}
-              className="flex-1 border rounded px-3 py-2"
-            />
-          </div>
-        </div>
 
         <button
           onClick={handleSave}
