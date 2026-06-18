@@ -11,6 +11,9 @@ interface Settings {
   secondaryColor: string;
   bannerText: string;
   isBannerActive: boolean;
+  shippingBelow500g: number;
+  shippingAbove500g: number;
+  shippingWeightThreshold: number;
 }
 
 export default function SettingsManager() {
@@ -21,6 +24,9 @@ export default function SettingsManager() {
     secondaryColor: '#F5F1E8',
     bannerText: '',
     isBannerActive: false,
+    shippingBelow500g: 40,
+    shippingAbove500g: 80,
+    shippingWeightThreshold: 500,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -108,10 +114,46 @@ export default function SettingsManager() {
           />
         </div>
 
+        <div className="p-4 border rounded bg-gray-50">
+          <h3 className="font-bold mb-3">Weight-Based Shipping Charges</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Weight Threshold (ml/g)</label>
+              <input
+                type="number"
+                value={settings.shippingWeightThreshold}
+                onChange={e => setSettings({ ...settings, shippingWeightThreshold: Math.max(0, Number(e.target.value)) })}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                placeholder="e.g. 500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Shipping Charge below Threshold (₹)</label>
+              <input
+                type="number"
+                value={settings.shippingBelow500g}
+                onChange={e => setSettings({ ...settings, shippingBelow500g: Math.max(0, Number(e.target.value)) })}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                placeholder="e.g. 40"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Shipping Charge above/equal Threshold (₹)</label>
+              <input
+                type="number"
+                value={settings.shippingAbove500g}
+                onChange={e => setSettings({ ...settings, shippingAbove500g: Math.max(0, Number(e.target.value)) })}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                placeholder="e.g. 80"
+              />
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700 disabled:bg-gray-400"
+          className="w-full bg-[#8B5E34] text-white py-2 rounded font-medium hover:bg-[#6B5344] disabled:bg-gray-400"
         >
           {saving ? 'Saving...' : 'Save Settings'}
         </button>
