@@ -20,7 +20,7 @@ export default function BannersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, bannerId: string | null}>({ isOpen: false, bannerId: null });
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, bannerId: string | null }>({ isOpen: false, bannerId: null });
 
   // Form State
   const [title, setTitle] = useState('');
@@ -78,8 +78,8 @@ export default function BannersPage() {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || (!image && !imageFile) || (!mobileImage && !mobileImageFile)) {
-      return toast.error('Title, description, and both images are required');
+    if ((!image && !imageFile) || (!mobileImage && !mobileImageFile)) {
+      return toast.error('Both images are required');
     }
 
     const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
@@ -94,18 +94,18 @@ export default function BannersPage() {
 
     setSaving(true);
     const token = localStorage.getItem('adminToken');
-    
+
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
     formData.append('status', 'ACTIVE');
-    
+
     if (imageFile) {
       formData.append('image', imageFile);
     } else if (image) {
       formData.append('image', image);
     }
-    
+
     if (mobileImageFile) {
       formData.append('mobileImage', mobileImageFile);
     } else if (mobileImage) {
@@ -113,8 +113,8 @@ export default function BannersPage() {
     }
 
     try {
-      const url = editingId 
-        ? `/banners/${editingId}` 
+      const url = editingId
+        ? `/banners/${editingId}`
         : `/banners`;
       const method = editingId ? 'put' : 'post';
 
@@ -127,7 +127,7 @@ export default function BannersPage() {
         },
         data: formData
       });
-      
+
       const data = res.data;
       if (data.success) {
         toast.success(editingId ? 'Banner updated successfully' : 'Banner created successfully');
@@ -149,7 +149,7 @@ export default function BannersPage() {
   };
 
   const confirmDelete = async () => {
-    if(!deleteModal.bannerId) return;
+    if (!deleteModal.bannerId) return;
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
@@ -175,13 +175,13 @@ export default function BannersPage() {
   return (
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
-        
+
         {/* Left Column: Banners Catalog */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
-          
+
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-[16px] font-medium text-slate-800">Homepage Banners</h2>
-            <button 
+            <button
               onClick={handleAddClick}
               className="bg-[#2563eb] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
             >
@@ -189,7 +189,7 @@ export default function BannersPage() {
               Add New Banner
             </button>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
@@ -211,35 +211,34 @@ export default function BannersPage() {
                       <div className="flex gap-3">
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] text-slate-500 font-semibold uppercase">Laptop</span>
-                          <img 
-                            src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image} 
-                            alt={banner.title} 
-                            className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
-                          />
+                          <img
+                            src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image}
+                            alt={banner.title}
+                            className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
                         </div>
                         {banner.mobileImage && (
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] text-slate-500 font-semibold uppercase">Mobile</span>
-                            <img 
-                              src={banner.mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.mobileImage}` : banner.mobileImage} 
-                              alt={`${banner.title} mobile`} 
-                              className="w-[40px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" 
-                            />
+                            <img
+                              src={banner.mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.mobileImage}` : banner.mobileImage}
+                              alt={`${banner.title} mobile`}
+                              className="w-[40px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
+
                           </div>
                         )}
                       </div>
                     </td>
                     <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{banner.title}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug">{banner.description}</td>
+                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug" style={{ whiteSpace: 'pre-line' }}>{banner.description}</td>
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={() => handleEditClick(banner)}
                           className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteClick(banner._id)}
                           className="w-[38px] h-[38px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                         >
@@ -262,7 +261,7 @@ export default function BannersPage() {
               <h2 className="text-[20px] font-bold text-[#111827]">
                 {editingId ? 'Edit Banner' : 'Add New Banner'}
               </h2>
-              <button 
+              <button
                 onClick={handleClosePanel}
                 className="w-[32px] h-[32px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               >
@@ -274,31 +273,33 @@ export default function BannersPage() {
             <div className="flex-1 overflow-y-auto px-6 lg:px-8 pb-8 space-y-6 form-scrollbar">
               {/* Banner Title */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Banner Title</label>
-                <input 
-                  type="text" 
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Banner Title (optional)</label>
+                <input
+                  type="text"
+                  placeholder="Enter banner title (optional)"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]" 
+                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]"
                 />
+
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Description</label>
-                <input 
-                  type="text" 
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]" 
-                />
-              </div>
+                {/* Description */}
+                <div>
+                  <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Banner Text (optional)</label>
+                  <textarea
+                    placeholder="Enter banner text (use Enter for new lines)"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    className="w-full h-[96px] px-4 py-2 rounded-[12px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px] resize-none"
+                  />
+                </div>
 
               {/* Laptop Image Upload */}
               <div>
                 <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Laptop Size Photo</label>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept="image/*"
                   onChange={e => {
                     if (e.target.files && e.target.files.length > 0) {
@@ -312,55 +313,56 @@ export default function BannersPage() {
                       setImage('');
                     }
                   }}
-                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
-                />
-                {(image || imageFile) && (
-                  <div className="mt-4">
-                    <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
-                    <img 
-                      src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${image}` : image)} 
-                      alt="Preview" 
-                      className="w-full h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
-                    />
+                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" />
+
+                  {(image || imageFile) && (
+                    <div className="mt-4">
+                      <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
+                      <img
+                        src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${image}` : image)}
+                        alt="Preview"
+                        className="w-full h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm" />
+
                   </div>
-                )}
+                  )}
               </div>
 
               {/* Mobile Image Upload */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Phone Size Photo</label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={e => {
-                    if (e.target.files && e.target.files.length > 0) {
-                      const file = e.target.files[0];
-                      if (file.size > 3 * 1024 * 1024) {
-                        toast.error('Image size must be less than 3MB');
-                        e.target.value = '';
-                        return;
+                <div>
+                  <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Phone Size Photo</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        if (file.size > 3 * 1024 * 1024) {
+                          toast.error('Image size must be less than 3MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setMobileImageFile(file);
+                        setMobileImage('');
                       }
-                      setMobileImageFile(file);
-                      setMobileImage('');
-                    }
-                  }}
-                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
-                />
-                {(mobileImage || mobileImageFile) && (
-                  <div className="mt-4">
-                    <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
-                    <img 
-                      src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${mobileImage}` : mobileImage)} 
-                      alt="Mobile Preview" 
-                      className="w-[120px] h-[180px] rounded-lg object-cover border border-slate-200 shadow-sm"
-                    />
-                  </div>
-                )}
-              </div>
+                    }}
+                    className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer"
+                  />
+                  {(mobileImage || mobileImageFile) && (
+                    <div className="mt-4">
+                      <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
+                      <img
+                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${mobileImage}` : mobileImage)}
+                        alt="Mobile Preview"
+                        className="w-[120px] h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div></div>
 
               {/* Submit Button */}
               <div className="pt-2">
-                <button 
+                <button
                   onClick={handleSubmit}
                   disabled={saving}
                   className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#2563eb] hover:bg-blue-700'} text-white h-[48px] rounded-[12px] font-bold text-[15px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -371,7 +373,7 @@ export default function BannersPage() {
             </div>
           </div>
         )}
-        
+
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -386,20 +388,20 @@ export default function BannersPage() {
               Are you sure you want to delete this banner? This action cannot be undone.
             </p>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setDeleteModal({ isOpen: false, bannerId: null })}
                 disabled={deleting}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 h-[48px] rounded-[14px] font-bold text-[15px] transition-colors"
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmDelete}
-                disabled={deleting}
-                className={`flex-1 bg-red-500 hover:bg-red-600 text-white h-[48px] rounded-[14px] font-bold text-[15px] transition-colors shadow-sm shadow-red-500/20 ${deleting ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                {deleting ? 'Deleting...' : 'Yes, Delete'}
-              </button>
+              <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className={`flex-1 bg-red-500 hover:bg-red-600 text-white h-[48px] rounded-[14px] font-bold text-[15px] transition-colors ${deleting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
             </div>
           </div>
         </div>
