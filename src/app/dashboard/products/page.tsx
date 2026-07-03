@@ -445,7 +445,6 @@ export default function ProductsPage() {
                 {/* Variant Headers */}
                 <div className="flex gap-2 mb-2 px-3">
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Size / Vol</div>
-                  <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Weight (g/ml)</div>
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Offer Price</div>
                   <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actual Price</div>
 
@@ -459,7 +458,6 @@ export default function ProductsPage() {
                       <div key={i} className="flex flex-col gap-1">
                         <div className={`flex gap-2 items-center bg-slate-50 p-2 rounded-[12px] border ${priceError ? 'border-red-200' : 'border-slate-100'}`}>
                           <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                          <input type="number" placeholder="Weight (g)" value={v.weight === 0 ? '' : v.weight} onChange={(e) => handleVariantChange(i, 'weight', Number(e.target.value))} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
                           <input type="number" placeholder="₹ Offer" value={v.price === 0 ? '' : v.price} onChange={(e) => handleVariantChange(i, 'price', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
                           <input type="number" placeholder="₹ Actual" value={v.oldPrice === 0 ? '' : v.oldPrice} onChange={(e) => handleVariantChange(i, 'oldPrice', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
 
