@@ -29,6 +29,12 @@ const apiClient = axios.create({
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
   (config) => {
+    // Fix: If url starts with a slash (e.g. "/products"), adjust baseURL and url to prevent dropping the path suffix
+    if (config.url && config.url.startsWith('/') && config.baseURL) {
+      const base = config.baseURL.endsWith('/') ? config.baseURL : `${config.baseURL}/`;
+      config.baseURL = base;
+      config.url = config.url.substring(1);
+    }
     // Attach the token from localStorage before each request
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
     if (token) {
