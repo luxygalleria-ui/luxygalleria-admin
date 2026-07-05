@@ -5,6 +5,21 @@ import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 
+const parseWeightFromVolume = (volume: string): number | null => {
+  if (!volume) return null;
+  const match = volume.match(/(\d+(?:\.\d+)?)\s*(kg|g|gm|gms|l|ltr|liter|liters|litre|litres|ml)/i);
+  if (match) {
+    const value = parseFloat(match[1]);
+    const unit = match[2].toLowerCase();
+    if (unit === 'kg' || unit === 'l' || unit === 'ltr' || unit === 'liter' || unit === 'liters' || unit === 'litre' || unit === 'litres') {
+      return value;
+    } else if (unit === 'g' || unit === 'gm' || unit === 'gms' || unit === 'ml') {
+      return value / 1000;
+    }
+  }
+  return null;
+};
+
 // Product type matching backend
 interface IVariant {
   volume: string;
@@ -209,14 +224,27 @@ export default function ProductsPage() {
     formData.append('name', name);
     formData.append('category', category);
     formData.append('description', description);
-    formData.append('variants', JSON.stringify(variants));
+    
+    // Auto-calculate weights for variants
+    const variantsWithWeight = variants.map(v => {
+      const parsedWeight = parseWeightFromVolume(v.volume || '');
+      return {
+        ...v,
+        weight: parsedWeight !== null ? parsedWeight : (v.weight || 0)
+      };
+    });
+    formData.append('variants', JSON.stringify(variantsWithWeight));
     formData.append('starRating', String(starRating === '' ? 0 : starRating));
     formData.append('reviewsCount', String(reviewsCount === '' ? 0 : reviewsCount));
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
     formData.append('stock', String(stock));
-    // We removed the global weight. Weight is now parsed through variants json.
+    
+    // Set global weight in formData based on the first variant's weight
+    if (variantsWithWeight.length > 0) {
+      formData.append('weight', String(variantsWithWeight[0].weight));
+    }
 
     // Convert comma separated images to array
     const imagesArray = imageUrls.split(',').map(url => url.trim()).filter(url => url);
@@ -362,7 +390,15 @@ export default function ProductsPage() {
                     <td className="py-5 px-6">
                       <div className="flex flex-col gap-1">
                         <span className="text-[14px] font-medium text-slate-600">Stock: {product.stock || 0}</span>
-                        <span className="text-[13px] text-slate-400">Wt: {product.weight || 0}kg</span>
+                        <span className="text-[13px] text-slate-400">
+                          Wt: {(() => {
+                            const parsed = product.variants?.[0]?.volume ? parseWeightFromVolume(product.variants[0].volume) : null;
+                            if ((product.weight === undefined || product.weight === 0 || product.weight > 10) && parsed !== null) {
+                              return parsed;
+                            }
+                            return product.weight || 0;
+                          })()}kg
+                        </span>
                       </div>
                     </td>
 

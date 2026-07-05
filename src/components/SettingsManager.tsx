@@ -110,7 +110,7 @@ export default function SettingsManager() {
             value={settings.whatsappNumber}
             onChange={e => setSettings({ ...settings, whatsappNumber: e.target.value })}
             className="w-full border rounded px-3 py-2"
-            placeholder="e.g., 918907076996"
+            placeholder="e.g., 917736989068"
           />
         </div>
 
