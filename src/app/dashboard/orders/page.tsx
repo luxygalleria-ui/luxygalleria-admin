@@ -15,6 +15,8 @@ interface OrderItem {
   };
   quantity: number;
   price: number;
+  image?: string;
+  size?: string;
 }
 
 interface Order {
