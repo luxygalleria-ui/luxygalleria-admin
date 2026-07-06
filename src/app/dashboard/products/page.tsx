@@ -25,6 +25,8 @@ interface IVariant {
   volume: string;
   price: number;
   oldPrice?: number;
+  offerPrice?: number;
+  actualPrice?: number;
   weight?: number;
   stock?: number;
   image?: string;
