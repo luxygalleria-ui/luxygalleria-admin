@@ -26,6 +26,9 @@ interface IVariant {
   price: number;
   oldPrice?: number;
   weight?: number;
+  stock?: number;
+  image?: string;
+  sku?: string;
 }
 
 interface IProduct {
@@ -70,7 +73,8 @@ export default function ProductsPage() {
   const [imageUrls, setImageUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0 }]);
+  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
+  const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
 
   // Fetch Products
   const fetchProducts = async () => {
@@ -124,7 +128,7 @@ export default function ProductsPage() {
     setImageUrls('');
     setImageFiles([]);
     setPreviewUrls([]);
-    setVariants([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0 }]);
+    setVariants([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
     setIsAddProductOpen(true);
   };
 
@@ -148,19 +152,53 @@ export default function ProductsPage() {
     setImageFiles([]);
     setPreviewUrls([]);
     // Provide a deep copy of variants to prevent mutating original state directly
-    setVariants(product.variants.map(v => ({ volume: v.volume, price: v.price, oldPrice: v.oldPrice, weight: v.weight || 0 })));
+    setVariants(product.variants.map(v => ({
+      volume: v.volume,
+      price: v.offerPrice || v.price || 0,
+      oldPrice: v.actualPrice || v.oldPrice || 0,
+      weight: v.weight || 0,
+      stock: v.stock || 0,
+      image: v.image || '',
+      sku: v.sku || ''
+    })));
     setIsAddProductOpen(true);
   };
 
   // Handle Add Variant
   const handleAddVariant = () => {
-    setVariants([...variants, { volume: '100ml', price: 0, oldPrice: 0, weight: 0 }]);
+    setVariants([...variants, { volume: '100ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
   };
 
   const handleVariantChange = (index: number, field: keyof IVariant, value: string | number) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     setVariants(newVariants);
+  };
+
+  const handleVariantImageUpload = async (index: number, file: File) => {
+    setUploadingVariantIndex(index);
+    const formData = new FormData();
+    formData.append('imageFile', file);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.data && res.data.success) {
+        handleVariantChange(index, 'image', res.data.url);
+        toast.success('Variant image uploaded!');
+      } else {
+        toast.error('Failed to upload variant image');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error uploading image');
+    } finally {
+      setUploadingVariantIndex(null);
+    }
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -225,12 +263,23 @@ export default function ProductsPage() {
     formData.append('category', category);
     formData.append('description', description);
     
-    // Auto-calculate weights for variants
+    // Map variants fully and auto-calculate weights/stock
     const variantsWithWeight = variants.map(v => {
       const parsedWeight = parseWeightFromVolume(v.volume || '');
+      const offerPrice = Number(v.price || 0);
+      const actualPrice = Number(v.oldPrice || v.price || 0);
+      const weight = Number(v.weight !== undefined && v.weight > 0 ? v.weight : (parsedWeight !== null ? parsedWeight : 0));
+      const stockVal = Number(v.stock !== undefined ? v.stock : 0);
       return {
         ...v,
-        weight: parsedWeight !== null ? parsedWeight : (v.weight || 0)
+        offerPrice,
+        actualPrice,
+        price: offerPrice,
+        oldPrice: actualPrice,
+        weight,
+        stock: stockVal,
+        image: v.image || '',
+        sku: v.sku || ''
       };
     });
     formData.append('variants', JSON.stringify(variantsWithWeight));
@@ -239,7 +288,10 @@ export default function ProductsPage() {
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
-    formData.append('stock', String(stock));
+    
+    // Sum stock across variants
+    const totalStock = variantsWithWeight.reduce((acc, curr) => acc + curr.stock, 0);
+    formData.append('stock', String(totalStock));
     
     // Set global weight in formData based on the first variant's weight
     if (variantsWithWeight.length > 0) {
@@ -478,30 +530,114 @@ export default function ProductsPage() {
                   </button>
                 </div>
                 
-                {/* Variant Headers */}
-                <div className="flex gap-2 mb-2 px-3">
-                  <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Size / Vol</div>
-                  <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Offer Price</div>
-                  <div className="flex-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Actual Price</div>
-
-                  {variants.length > 1 && <div className="w-8 shrink-0"></div>}
-                </div>
-
-                <div className="space-y-3">
+                {/* Variant List */}
+                <div className="space-y-4">
                   {variants.map((v, i) => {
                     const priceError = !!(v.oldPrice && v.oldPrice > 0 && v.oldPrice < v.price);
                     return (
-                      <div key={i} className="flex flex-col gap-1">
-                        <div className={`flex gap-2 items-center bg-slate-50 p-2 rounded-[12px] border ${priceError ? 'border-red-200' : 'border-slate-100'}`}>
-                          <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[14px] transition-all bg-white" />
-                          <input type="number" placeholder="₹ Offer" value={v.price === 0 ? '' : v.price} onChange={(e) => handleVariantChange(i, 'price', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
-                          <input type="number" placeholder="₹ Actual" value={v.oldPrice === 0 ? '' : v.oldPrice} onChange={(e) => handleVariantChange(i, 'oldPrice', Number(e.target.value))} className={`flex-1 min-w-0 h-[42px] px-3 rounded-[8px] border outline-none text-[14px] transition-all bg-white ${priceError ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 text-red-600 bg-red-50/30' : 'border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'}`} />
-
+                      <div key={i} className={`bg-slate-50 p-4 rounded-[12px] border ${priceError ? 'border-red-200' : 'border-slate-100'} flex flex-col gap-3`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Variant #{i + 1}</span>
                           {variants.length > 1 && (
-                            <button onClick={() => handleRemoveVariant(i)} className="w-8 h-[42px] shrink-0 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-[8px] transition-colors">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <button onClick={() => handleRemoveVariant(i)} className="text-red-400 hover:text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-[6px] text-xs font-semibold flex items-center gap-1 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                              Remove
                             </button>
                           )}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {/* Size / Vol */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Size / Vol</label>
+                            <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Offer Price */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Offer Price (₹)</label>
+                            <input type="number" placeholder="₹ Offer" value={v.price === 0 ? '' : v.price} onChange={(e) => handleVariantChange(i, 'price', Number(e.target.value))} className={`w-full h-[40px] px-3 rounded-[8px] border outline-none text-[13px] transition-all bg-white ${priceError ? 'border-red-400' : 'border-slate-200'}`} />
+                          </div>
+                          {/* Actual Price */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Actual Price (₹)</label>
+                            <input type="number" placeholder="₹ Actual" value={v.oldPrice === undefined || v.oldPrice === 0 ? '' : v.oldPrice} onChange={(e) => handleVariantChange(i, 'oldPrice', Number(e.target.value))} className={`w-full h-[40px] px-3 rounded-[8px] border outline-none text-[13px] transition-all bg-white ${priceError ? 'border-red-400' : 'border-slate-200'}`} />
+                          </div>
+                          {/* Weight */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Weight (kg)</label>
+                            <input type="number" step="0.001" placeholder="e.g. 0.05" value={v.weight === undefined || v.weight === 0 ? '' : v.weight} onChange={(e) => handleVariantChange(i, 'weight', Number(e.target.value))} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Stock */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Stock</label>
+                            <input type="number" placeholder="Stock quantity" value={v.stock === undefined || v.stock === 0 ? '' : v.stock} onChange={(e) => handleVariantChange(i, 'stock', Number(e.target.value))} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* SKU */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">SKU (optional)</label>
+                            <input type="text" placeholder="e.g. SKU-123" value={v.sku || ''} onChange={(e) => handleVariantChange(i, 'sku', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Variant Image Upload & URL */}
+                          <div className="col-span-2">
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Variant Image</label>
+                            
+                            {uploadingVariantIndex === i ? (
+                              <div className="flex items-center gap-3 h-[40px] px-3 rounded-[8px] border border-blue-200 bg-blue-50/30 text-blue-600 text-[13px] font-semibold animate-pulse">
+                                <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Uploading to Cloudinary...</span>
+                              </div>
+                            ) : v.image ? (
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-[40px] h-[40px] rounded-[8px] overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
+                                  <img
+                                    src={getImageUrl(v.image)}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                    onError={handleImageError}
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={v.image || ''}
+                                  readOnly
+                                  className="flex-1 h-[40px] px-3 rounded-[8px] border border-slate-200 bg-slate-100/50 text-slate-500 outline-none text-[12px] truncate"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleVariantChange(i, 'image', '')}
+                                  className="h-[40px] px-3 bg-red-50 text-red-600 font-semibold text-[13px] rounded-[8px] border border-red-100 hover:bg-red-100 transition-all select-none"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center justify-center px-4 h-[40px] bg-blue-50 text-blue-600 font-semibold text-[13px] rounded-[8px] border border-dashed border-blue-200 cursor-pointer hover:bg-blue-100 transition-all select-none shrink-0">
+                                  Upload Image
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      if (e.target.files && e.target.files[0]) {
+                                        handleVariantImageUpload(i, e.target.files[0]);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <span className="text-[12px] text-slate-400 select-none">or</span>
+                                <input
+                                  type="text"
+                                  placeholder="Paste image URL..."
+                                  value={v.image || ''}
+                                  onChange={(e) => handleVariantChange(i, 'image', e.target.value)}
+                                  className="flex-1 h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {priceError && (
                           <span className="text-[12px] font-bold text-red-500 ml-2 animate-in fade-in slide-in-from-top-1">

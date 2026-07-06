@@ -336,7 +336,14 @@ export default function OrdersPage() {
                   {activeOrder.items.map((item, idx) => (
                     <div key={idx} className="flex gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
                       <div className="w-12 h-12 rounded-lg bg-slate-100 shrink-0 overflow-hidden">
-                        {item.product?.images?.[0] ? (
+                        {item.image ? (
+                          <img 
+                            src={getImageUrl(item.image)} 
+                            alt={item.product?.name || 'Product variant'} 
+                            className="w-full h-full object-cover" 
+                            onError={handleImageError}
+                          />
+                        ) : item.product?.images?.[0] ? (
                           <img 
                             src={getImageUrl(item.product.images[0])} 
                             alt={item.product?.name} 
@@ -348,7 +355,10 @@ export default function OrdersPage() {
                         )}
                       </div>
                       <div className="flex flex-col gap-0.5 flex-1">
-                        <p className="font-bold text-[#111827] text-[14px] leading-snug">{item.product?.name || 'Product unavailable'}</p>
+                        <p className="font-bold text-[#111827] text-[14px] leading-snug">
+                          {item.product?.name || 'Product unavailable'}
+                          {item.size && <span className="text-xs text-[#2563eb] font-semibold ml-1.5 font-sans">({item.size})</span>}
+                        </p>
                         <p className="text-[13px] text-slate-500 font-medium">x{item.quantity}</p>
                         <p className="font-bold text-[#111827] text-[14px] mt-1">₹{item.price}</p>
                       </div>
