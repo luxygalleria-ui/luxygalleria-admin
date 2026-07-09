@@ -23,6 +23,8 @@ const parseWeightFromVolume = (volume: string): number | null => {
 // Product type matching backend
 interface IVariant {
   volume: string;
+  size?: string;
+  flavor?: string;
   price: number;
   oldPrice?: number;
   offerPrice?: number;
@@ -31,6 +33,8 @@ interface IVariant {
   stock?: number;
   image?: string;
   sku?: string;
+  description?: string;
+  name?: string;
 }
 
 interface IProduct {
@@ -75,7 +79,7 @@ export default function ProductsPage() {
   const [imageUrls, setImageUrls] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
+  const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', size: '50ml', flavor: 'Default', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
   const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
 
   // Fetch Products
@@ -130,7 +134,7 @@ export default function ProductsPage() {
     setImageUrls('');
     setImageFiles([]);
     setPreviewUrls([]);
-    setVariants([{ volume: '50ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
+    setVariants([{ volume: '50ml', size: '50ml', flavor: 'Default', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '', description: '', name: '' }]);
     setIsAddProductOpen(true);
   };
 
@@ -155,20 +159,24 @@ export default function ProductsPage() {
     setPreviewUrls([]);
     // Provide a deep copy of variants to prevent mutating original state directly
     setVariants(product.variants.map(v => ({
-      volume: v.volume,
+      volume: v.volume || v.size || 'Standard',
+      size: v.size || v.volume || 'Standard',
+      flavor: v.flavor || 'Default',
       price: v.offerPrice || v.price || 0,
       oldPrice: v.actualPrice || v.oldPrice || 0,
       weight: v.weight || 0,
       stock: v.stock || 0,
       image: v.image || '',
-      sku: v.sku || ''
+      sku: v.sku || '',
+      description: v.description || '',
+      name: v.name || ''
     })));
     setIsAddProductOpen(true);
   };
 
   // Handle Add Variant
   const handleAddVariant = () => {
-    setVariants([...variants, { volume: '100ml', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '' }]);
+    setVariants([...variants, { volume: '100ml', size: '100ml', flavor: 'Default', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '', description: '', name: '' }]);
   };
 
   const handleVariantChange = (index: number, field: keyof IVariant, value: string | number) => {
@@ -178,6 +186,14 @@ export default function ProductsPage() {
   };
 
   const handleVariantImageUpload = async (index: number, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files are allowed.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB.');
+      return;
+    }
     setUploadingVariantIndex(index);
     const formData = new FormData();
     formData.append('imageFile', file);
@@ -225,14 +241,22 @@ export default function ProductsPage() {
   };
 
   const removeImageFile = (index: number) => {
-    const newFiles = [...imageFiles];
-    newFiles.splice(index, 1);
-    setImageFiles(newFiles);
-    
-    const newPreviews = [...previewUrls];
-    URL.revokeObjectURL(newPreviews[index]); // Free memory
-    newPreviews.splice(index, 1);
-    setPreviewUrls(newPreviews);
+    if (imageFiles.length > 0) {
+      const newFiles = [...imageFiles];
+      newFiles.splice(index, 1);
+      setImageFiles(newFiles);
+      
+      const newPreviews = [...previewUrls];
+      if (newPreviews[index]) {
+        URL.revokeObjectURL(newPreviews[index]); // Free memory
+      }
+      newPreviews.splice(index, 1);
+      setPreviewUrls(newPreviews);
+    } else {
+      const urlsArray = imageUrls.split(',').map((url) => url.trim()).filter((url) => url);
+      urlsArray.splice(index, 1);
+      setImageUrls(urlsArray.join(', '));
+    }
   };
 
   const displayPreviewUrls = imageFiles.length > 0
@@ -267,13 +291,18 @@ export default function ProductsPage() {
     
     // Map variants fully and auto-calculate weights/stock
     const variantsWithWeight = variants.map(v => {
-      const parsedWeight = parseWeightFromVolume(v.volume || '');
+      const sizeVal = v.size || v.volume || 'Standard';
+      const flavorVal = v.flavor || 'Default';
+      const parsedWeight = parseWeightFromVolume(sizeVal);
       const offerPrice = Number(v.price || 0);
       const actualPrice = Number(v.oldPrice || v.price || 0);
       const weight = Number(v.weight !== undefined && v.weight > 0 ? v.weight : (parsedWeight !== null ? parsedWeight : 0));
       const stockVal = Number(v.stock !== undefined ? v.stock : 0);
       return {
         ...v,
+        size: sizeVal,
+        volume: sizeVal,
+        flavor: flavorVal,
         offerPrice,
         actualPrice,
         price: offerPrice,
@@ -281,7 +310,9 @@ export default function ProductsPage() {
         weight,
         stock: stockVal,
         image: v.image || '',
-        sku: v.sku || ''
+        sku: v.sku || '',
+        description: v.description || '',
+        name: v.name || ''
       };
     });
     formData.append('variants', JSON.stringify(variantsWithWeight));
@@ -548,10 +579,18 @@ export default function ProductsPage() {
                           )}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {/* Size / Vol */}
+                          {/* Size */}
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Size / Vol</label>
-                            <input type="text" placeholder="e.g. 50ml" value={v.volume} onChange={(e) => handleVariantChange(i, 'volume', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Size</label>
+                            <input type="text" placeholder="e.g. 50ml" value={v.size || v.volume} onChange={(e) => {
+                              handleVariantChange(i, 'size', e.target.value);
+                              handleVariantChange(i, 'volume', e.target.value);
+                            }} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Flavor */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Flavor</label>
+                            <input type="text" placeholder="e.g. Dark Chocolate" value={v.flavor || ''} onChange={(e) => handleVariantChange(i, 'flavor', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
                           </div>
                           {/* Offer Price */}
                           <div>
@@ -578,7 +617,17 @@ export default function ProductsPage() {
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">SKU (optional)</label>
                             <input type="text" placeholder="e.g. SKU-123" value={v.sku || ''} onChange={(e) => handleVariantChange(i, 'sku', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
                           </div>
-                          {/* Variant Image Upload & URL */}
+                          {/* Description */}
+                          <div className="col-span-2">
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Variant Description (optional)</label>
+                            <input type="text" placeholder="Description for this variant" value={v.description || ''} onChange={(e) => handleVariantChange(i, 'description', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Variant Name */}
+                          <div className="col-span-2">
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Variant Name (optional)</label>
+                            <input type="text" placeholder="Name for this variant" value={v.name || ''} onChange={(e) => handleVariantChange(i, 'name', e.target.value)} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                          </div>
+                          {/* Variant Image Upload */}
                           <div className="col-span-2">
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Variant Image</label>
                             
@@ -588,7 +637,7 @@ export default function ProductsPage() {
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>Uploading to Cloudinary...</span>
+                                <span>Uploading variant image...</span>
                               </div>
                             ) : v.image ? (
                               <div className="flex items-center gap-3">
@@ -600,24 +649,34 @@ export default function ProductsPage() {
                                     onError={handleImageError}
                                   />
                                 </div>
-                                <input
-                                  type="text"
-                                  value={v.image || ''}
-                                  readOnly
-                                  className="flex-1 h-[40px] px-3 rounded-[8px] border border-slate-200 bg-slate-100/50 text-slate-500 outline-none text-[12px] truncate"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleVariantChange(i, 'image', '')}
-                                  className="h-[40px] px-3 bg-red-50 text-red-600 font-semibold text-[13px] rounded-[8px] border border-red-100 hover:bg-red-100 transition-all select-none"
-                                >
-                                  Remove
-                                </button>
+                                <div className="flex items-center gap-2 flex-1">
+                                  <label className="flex items-center justify-center px-3 h-[40px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[13px] rounded-[8px] border border-slate-200 cursor-pointer transition-all select-none shrink-0">
+                                    Replace Image
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                          handleVariantImageUpload(i, e.target.files[0]);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVariantChange(i, 'image', '')}
+                                    className="h-[40px] px-3 bg-red-50 text-red-600 font-semibold text-[13px] rounded-[8px] border border-red-100 hover:bg-red-100 transition-all select-none"
+                                  >
+                                    Delete Image
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               <div className="flex items-center gap-3">
-                                <label className="flex items-center justify-center px-4 h-[40px] bg-blue-50 text-blue-600 font-semibold text-[13px] rounded-[8px] border border-dashed border-blue-200 cursor-pointer hover:bg-blue-100 transition-all select-none shrink-0">
-                                  Upload Image
+                                <label className="flex-1 flex items-center justify-center px-4 h-[40px] bg-blue-50 text-blue-600 font-semibold text-[13px] rounded-[8px] border border-dashed border-blue-200 cursor-pointer hover:bg-blue-100 transition-all select-none">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                  Upload Variant Image
                                   <input
                                     type="file"
                                     accept="image/*"
@@ -629,14 +688,6 @@ export default function ProductsPage() {
                                     }}
                                   />
                                 </label>
-                                <span className="text-[12px] text-slate-400 select-none">or</span>
-                                <input
-                                  type="text"
-                                  placeholder="Paste image URL..."
-                                  value={v.image || ''}
-                                  onChange={(e) => handleVariantChange(i, 'image', e.target.value)}
-                                  className="flex-1 h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white"
-                                />
                               </div>
                             )}
                           </div>
