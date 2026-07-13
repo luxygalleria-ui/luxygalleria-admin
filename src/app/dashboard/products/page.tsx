@@ -275,11 +275,6 @@ export default function ProductsPage() {
     if (!category) return toast.error("Category is required.");
     if (variants.length === 0) return toast.error("At least one variant is required.");
 
-    // Validate images
-    if (existingImages.length === 0 && imageFiles.length === 0) {
-      return toast.error("At least one product image is required.");
-    }
-
     // Validate duplicates & prices/sizes
     const variantKeys = new Set<string>();
     for (let i = 0; i < variants.length; i++) {
@@ -469,7 +464,11 @@ export default function ProductsPage() {
                   <tr key={product._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
                       <img 
-                        src={getImageUrl(product.images[0])} 
+                        src={getImageUrl(
+                          product.images && product.images.length > 0 
+                            ? product.images[0] 
+                            : (product.variants?.find((v: any) => v.image)?.image || "")
+                        )} 
                         alt={product.name} 
                         className="w-[50px] h-[50px] rounded-[10px] object-cover bg-slate-100"
                         onError={handleImageError}
