@@ -22,6 +22,7 @@ const parseWeightFromVolume = (volume: string): number | null => {
 
 // Product type matching backend
 interface IVariant {
+  _id?: string;
   volume: string;
   size?: string;
   flavor?: string;
