@@ -42,6 +42,8 @@ interface IProduct {
   _id: string;
   name: string;
   category: string;
+  department?: string;
+  brand?: string;
   description: string;
   variants: IVariant[];
   starRating: number;
@@ -69,9 +71,9 @@ export default function ProductsPage() {
   // Form State
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
+  const [department, setDepartment] = useState('');
+  const [brand, setBrand] = useState('');
   const [description, setDescription] = useState('');
-  const [starRating, setStarRating] = useState<number | ''>(5);
-  const [reviewsCount, setReviewsCount] = useState<number | ''>(0);
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [showOnLandingPage, setShowOnLandingPage] = useState(false);
@@ -124,9 +126,9 @@ export default function ProductsPage() {
     setName('');
     const activeCategories = dbCategories.filter(c => c.status === 'ACTIVE');
     setCategory(activeCategories.length > 0 ? activeCategories[0].name : '');
+    setDepartment('');
+    setBrand('');
     setDescription('');
-    setStarRating(5);
-    setReviewsCount(0);
     setOfferText('');
     setKeyFeatures('');
     setShowOnLandingPage(false);
@@ -143,9 +145,9 @@ export default function ProductsPage() {
     setEditingId(product._id);
     setName(product.name);
     setCategory(product.category);
+    setDepartment(product.department || '');
+    setBrand(product.brand || '');
     setDescription(product.description);
-    setStarRating(product.starRating);
-    setReviewsCount(product.reviewsCount);
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
     setShowOnLandingPage(product.showOnLandingPage || false);
@@ -295,8 +297,6 @@ export default function ProductsPage() {
       variantKeys.add(key);
     }
 
-    if (starRating !== '' && (starRating < 0 || starRating > 5)) return toast.error("Star Rating must be between 0 and 5.");
-    if (reviewsCount !== '' && reviewsCount < 0) return toast.error("Reviews Count cannot be negative.");
 
     setSaving(true);
     const token = localStorage.getItem('adminToken');
@@ -304,6 +304,8 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('category', category);
+    formData.append('department', department);
+    formData.append('brand', brand);
     formData.append('description', description);
     
     // Map variants fully and auto-calculate weights/stock
@@ -333,8 +335,6 @@ export default function ProductsPage() {
       };
     });
     formData.append('variants', JSON.stringify(variantsWithWeight));
-    formData.append('starRating', String(starRating === '' ? 0 : starRating));
-    formData.append('reviewsCount', String(reviewsCount === '' ? 0 : reviewsCount));
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
@@ -572,6 +572,42 @@ export default function ProductsPage() {
                 </div>
               </div>
 
+              {/* Department & Brand */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Department</label>
+                  <input
+                    type="text"
+                    list="department-options"
+                    value={department}
+                    onChange={e => setDepartment(e.target.value)}
+                    placeholder="e.g. Food & Beverages"
+                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px] text-slate-700"
+                  />
+                  <datalist id="department-options">
+                    {Array.from(new Set(products.map(p => p.department).filter(Boolean))).map(d => (
+                      <option key={d} value={d as string} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Brand</label>
+                  <input
+                    type="text"
+                    list="brand-options"
+                    value={brand}
+                    onChange={e => setBrand(e.target.value)}
+                    placeholder="e.g. Coca-Cola"
+                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px] text-slate-700"
+                  />
+                  <datalist id="brand-options">
+                    {Array.from(new Set(products.map(p => p.brand).filter(Boolean))).map(b => (
+                      <option key={b} value={b as string} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+
               {/* Product Variants */}
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -749,18 +785,6 @@ export default function ProductsPage() {
                 <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full h-[120px] p-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-[15px]"></textarea>
               </div>
 
-              {/* Star Rating & Reviews */}
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Star Rating</label>
-                  <input type="number" max="5" min="0" step="0.1" value={starRating} onChange={e => setStarRating(e.target.value === '' ? '' : Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Reviews Count</label>
-                  <input type="number" value={reviewsCount} onChange={e => setReviewsCount(e.target.value === '' ? '' : Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
-                </div>
-              </div>
-
               {/* Stock */}
               <div className="flex gap-4">
                 <div className="flex-1">
@@ -776,7 +800,7 @@ export default function ProductsPage() {
               </div>
 
               <div>
-                <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Key Features (Benefits, one per line or comma separated)</label>
+                <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Key Features (short highlight shown on product card, one per line or comma separated)</label>
                 <textarea value={keyFeatures} onChange={e => setKeyFeatures(e.target.value)} placeholder="e.g. Brightens Skin&#10;Reduces dark spots" className="w-full h-[100px] p-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-[15px]"></textarea>
               </div>
 
