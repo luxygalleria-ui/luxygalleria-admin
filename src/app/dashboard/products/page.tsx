@@ -42,8 +42,6 @@ interface IProduct {
   _id: string;
   name: string;
   category: string;
-  department?: string;
-  brand?: string;
   description: string;
   variants: IVariant[];
   starRating: number;
@@ -71,8 +69,6 @@ export default function ProductsPage() {
   // Form State
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [department, setDepartment] = useState('');
-  const [brand, setBrand] = useState('');
   const [description, setDescription] = useState('');
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
@@ -126,8 +122,6 @@ export default function ProductsPage() {
     setName('');
     const activeCategories = dbCategories.filter(c => c.status === 'ACTIVE');
     setCategory(activeCategories.length > 0 ? activeCategories[0].name : '');
-    setDepartment('');
-    setBrand('');
     setDescription('');
     setOfferText('');
     setKeyFeatures('');
@@ -145,8 +139,6 @@ export default function ProductsPage() {
     setEditingId(product._id);
     setName(product.name);
     setCategory(product.category);
-    setDepartment(product.department || '');
-    setBrand(product.brand || '');
     setDescription(product.description);
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
@@ -304,8 +296,6 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('category', category);
-    formData.append('department', department);
-    formData.append('brand', brand);
     formData.append('description', description);
     
     // Map variants fully and auto-calculate weights/stock
@@ -569,42 +559,6 @@ export default function ProductsPage() {
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                   </div>
-                </div>
-              </div>
-
-              {/* Department & Brand */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Department</label>
-                  <input
-                    type="text"
-                    list="department-options"
-                    value={department}
-                    onChange={e => setDepartment(e.target.value)}
-                    placeholder="e.g. Food & Beverages"
-                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px] text-slate-700"
-                  />
-                  <datalist id="department-options">
-                    {Array.from(new Set(products.map(p => p.department).filter(Boolean))).map(d => (
-                      <option key={d} value={d as string} />
-                    ))}
-                  </datalist>
-                </div>
-                <div>
-                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Brand</label>
-                  <input
-                    type="text"
-                    list="brand-options"
-                    value={brand}
-                    onChange={e => setBrand(e.target.value)}
-                    placeholder="e.g. Coca-Cola"
-                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px] text-slate-700"
-                  />
-                  <datalist id="brand-options">
-                    {Array.from(new Set(products.map(p => p.brand).filter(Boolean))).map(b => (
-                      <option key={b} value={b as string} />
-                    ))}
-                  </datalist>
                 </div>
               </div>
 
