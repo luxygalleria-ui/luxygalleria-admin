@@ -69,6 +69,9 @@ export default function ProductsPage() {
   // Form State
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [brandId, setBrandId] = useState('');
+  const [dbBrands, setDbBrands] = useState<any[]>([]);
   const [description, setDescription] = useState('');
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
@@ -104,6 +107,7 @@ export default function ProductsPage() {
         setDbCategories(data.data);
         const activeCategories = data.data.filter((c: any) => c.status === 'ACTIVE');
         if (activeCategories.length > 0) {
+          setCategoryId(activeCategories[0]._id);
           setCategory(activeCategories[0].name);
         }
       }
@@ -112,16 +116,31 @@ export default function ProductsPage() {
     }
   };
 
+  const fetchBrands = async () => {
+    try {
+      const res = await axios.get(`/brands`);
+      const data = res.data;
+      if (data.success) {
+        setDbBrands(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch brands', err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchBrands();
   }, []);
 
   const openAddForm = () => {
     setEditingId(null);
     setName('');
     const activeCategories = dbCategories.filter(c => c.status === 'ACTIVE');
+    setCategoryId(activeCategories.length > 0 ? activeCategories[0]._id : '');
     setCategory(activeCategories.length > 0 ? activeCategories[0].name : '');
+    setBrandId('');
     setDescription('');
     setOfferText('');
     setKeyFeatures('');
@@ -138,6 +157,8 @@ export default function ProductsPage() {
   const handleEdit = (product: IProduct) => {
     setEditingId(product._id);
     setName(product.name);
+    setCategoryId((product as any).categoryId?._id || (product as any).categoryId || '');
+    setBrandId((product as any).brandId?._id || (product as any).brandId || '');
     setCategory(product.category);
     setDescription(product.description);
     setOfferText(product.offerText || '');
@@ -296,6 +317,8 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append('name', name);
     formData.append('category', category);
+    formData.append('categoryId', categoryId);
+    formData.append('brandId', brandId);
     formData.append('description', description);
     
     // Map variants fully and auto-calculate weights/stock
@@ -437,12 +460,13 @@ export default function ProductsPage() {
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 rounded-l-[12px] w-[8%]">Image</th>
-                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[30%]">Name</th>
+                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[24%]">Name</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[12%]">Category</th>
+                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[12%]">Brand</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[14%]">Variant (Price)</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[10%]">Stock / Wt</th>
                   <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 w-[10%]">Status</th>
-                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 rounded-r-[12px] w-[14%]">Actions</th>
+                  <th className="py-4 px-6 text-[14px] font-semibold text-slate-500 rounded-r-[12px] w-[10%]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -468,6 +492,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="py-5 px-6 text-[15px] font-bold text-[#111827] leading-snug pr-8">{product.name}</td>
                     <td className="py-5 px-6 text-[15px] font-medium text-slate-600">{product.category}</td>
+                    <td className="py-5 px-6 text-[15px] font-medium text-slate-600">{(product as any).brandId?.name || '—'}</td>
                     <td className="py-5 px-6">
                       {product.variants.length > 0 ? (
                         <div className="flex flex-col">
@@ -548,13 +573,44 @@ export default function ProductsPage() {
               <div>
                 <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Category</label>
                 <div className="relative">
-                  <select value={category} onChange={e => setCategory(e.target.value)} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none text-[15px] text-slate-700">
+                  <select 
+                    value={categoryId} 
+                    onChange={e => {
+                      const id = e.target.value;
+                      setCategoryId(id);
+                      const matched = dbCategories.find(c => c._id === id);
+                      if (matched) {
+                        setCategory(matched.name);
+                      }
+                    }} 
+                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none text-[15px] text-slate-700"
+                  >
                     {dbCategories.filter(c => c.status === 'ACTIVE').map(c => (
-                      <option key={c._id} value={c.name}>{c.name}</option>
+                      <option key={c._id} value={c._id}>{c.name}</option>
                     ))}
                     {dbCategories.filter(c => c.status === 'ACTIVE').length === 0 && (
                       <option value="">No Active Categories</option>
                     )}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Brand */}
+              <div>
+                <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Brand</label>
+                <div className="relative">
+                  <select 
+                    value={brandId} 
+                    onChange={e => setBrandId(e.target.value)} 
+                    className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none text-[15px] text-slate-700"
+                  >
+                    <option value="">No Brand</option>
+                    {dbBrands.filter(b => b.status === 'ACTIVE').map(b => (
+                      <option key={b._id} value={b._id}>{b.name}</option>
+                    ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>

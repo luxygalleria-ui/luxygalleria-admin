@@ -5,77 +5,74 @@ import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 
-interface ICategory {
+interface IBrand {
   _id: string;
   name: string;
-  image: string;
+  logo: string;
   status: string;
   displayOrder: number;
 }
 
-export default function CategoriesPage() {
-  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
-  const [categories, setCategories] = useState<ICategory[]>([]);
+export default function BrandsPage() {
+  const [isAddBrandOpen, setIsAddBrandOpen] = useState(false);
+  const [brands, setBrands] = useState<IBrand[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, categoryId: string | null}>({ isOpen: false, categoryId: null });
+  const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, brandId: string | null}>({ isOpen: false, brandId: null });
   const [deleting, setDeleting] = useState(false);
 
   // Form State
   const [name, setName] = useState('');
-  const [image, setImage] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [logo, setLogo] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [status, setStatus] = useState('ACTIVE');
   const [displayOrder, setDisplayOrder] = useState(0);
 
-  // Fetch Categories
-  const fetchCategories = async () => {
+  // Fetch Brands
+  const fetchBrands = async () => {
     try {
-      const res = await axios.get(`/categories`);
+      const res = await axios.get(`/brands`);
       const data = res.data;
       if (data.success) {
-        setCategories(data.data);
+        setBrands(data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch categories', err);
+      console.error('Failed to fetch brands', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchBrands();
   }, []);
 
   const openAddForm = () => {
     setEditingId(null);
     setName('');
-    setImage('');
-    setImageFile(null);
+    setLogo('');
+    setLogoFile(null);
     setPreviewUrl('');
     setStatus('ACTIVE');
     setDisplayOrder(0);
-    setIsAddCategoryOpen(true);
+    setIsAddBrandOpen(true);
   };
 
-  const handleEdit = (category: ICategory) => {
-    setEditingId(category._id);
-    setName(category.name);
-    
-    setImage(getImageUrl(category.image) || '');
-    
-    setImageFile(null);
+  const handleEdit = (brand: IBrand) => {
+    setEditingId(brand._id);
+    setName(brand.name);
+    setLogo(getImageUrl(brand.logo) || '');
+    setLogoFile(null);
     setPreviewUrl('');
-    setStatus(category.status);
-    setDisplayOrder(category.displayOrder || 0);
-    setIsAddCategoryOpen(true);
+    setStatus(brand.status);
+    setDisplayOrder(brand.displayOrder || 0);
+    setIsAddBrandOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!name) return toast.error('Name is required');
-    if (!image && !imageFile && !editingId) return toast.error('Image is required');
     
     setSaving(true);
     const token = localStorage.getItem('adminToken');
@@ -84,16 +81,16 @@ export default function CategoriesPage() {
     formData.append('name', name);
     formData.append('status', status);
     formData.append('displayOrder', displayOrder.toString());
-    if (imageFile) {
-      formData.append('imageFile', imageFile);
-    } else if (image) {
-      formData.append('image', image);
+    if (logoFile) {
+      formData.append('logoFile', logoFile);
+    } else if (logo) {
+      formData.append('logo', logo);
     }
 
     try {
       const url = editingId 
-        ? `/categories/${editingId}` 
-        : `/categories`;
+        ? `/brands/${editingId}` 
+        : `/brands`;
       const method = editingId ? 'put' : 'post';
 
       const res = await axios({
@@ -108,12 +105,12 @@ export default function CategoriesPage() {
       
       const data = res.data;
       if (data.success) {
-        toast.success(editingId ? 'Category updated successfully' : 'Category created successfully');
-        setIsAddCategoryOpen(false);
+        toast.success(editingId ? 'Brand updated successfully' : 'Brand created successfully');
+        setIsAddBrandOpen(false);
         setEditingId(null);
-        fetchCategories();
+        fetchBrands();
       } else {
-        toast.error(data.message || 'Failed to save category');
+        toast.error(data.message || 'Failed to save brand');
       }
     } catch (err) {
       console.error(err);
@@ -124,28 +121,28 @@ export default function CategoriesPage() {
   };
 
   const handleDeleteClick = (id: string) => {
-    setDeleteModal({ isOpen: true, categoryId: id });
+    setDeleteModal({ isOpen: true, brandId: id });
   };
 
   const confirmDelete = async () => {
-    if(!deleteModal.categoryId) return;
+    if(!deleteModal.brandId) return;
     setDeleting(true);
     const token = localStorage.getItem('adminToken');
     try {
-      const res = await axios.delete(`/categories/${deleteModal.categoryId}`, {
+      const res = await axios.delete(`/brands/${deleteModal.brandId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = res.data;
       if (data.success) {
-        toast.success('Category deleted successfully');
-        fetchCategories();
-        setDeleteModal({ isOpen: false, categoryId: null });
+        toast.success('Brand deleted successfully');
+        fetchBrands();
+        setDeleteModal({ isOpen: false, brandId: null });
       } else {
         toast.error(data.message);
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error deleting category');
+      toast.error('Error deleting brand');
     } finally {
       setDeleting(false);
     }
@@ -155,16 +152,16 @@ export default function CategoriesPage() {
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         
-        {/* Left Column: Category Catalog */}
+        {/* Left Column: Brand Catalog */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[16px] font-medium text-slate-800">Product Categories</h2>
+            <h2 className="text-[16px] font-medium text-slate-800">Product Brands</h2>
             <button 
               onClick={openAddForm}
               className="bg-[#2563eb] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Add New Category
+              Add New Brand
             </button>
           </div>
           
@@ -172,43 +169,34 @@ export default function CategoriesPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#f8fafc]">
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[20%]">Image</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[40%]">Name</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[20%]">Status</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-r-[12px] w-[20%]">Actions</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[45%]">Name</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[25%]">Status</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-r-[12px] w-[30%]">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">Loading categories...</td></tr>
-                ) : categories.length === 0 ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">No categories found. Add your first category!</td></tr>
-                ) : categories.map((category) => (
-                  <tr key={category._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                  <tr><td colSpan={5} className="py-8 text-center text-slate-500">Loading brands...</td></tr>
+                ) : brands.length === 0 ? (
+                  <tr><td colSpan={5} className="py-8 text-center text-slate-500">No brands found. Add your first brand!</td></tr>
+                ) : brands.map((brand) => (
+                  <tr key={brand._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <td className="py-5 px-6 text-[15px] font-bold text-[#111827]">{brand.name}</td>
                     <td className="py-5 px-6">
-                      <img 
-                        src={getImageUrl(category.image)} 
-                        alt={category.name} 
-                        className="w-[54px] h-[54px] rounded-[12px] object-cover bg-slate-100 shadow-sm" 
-                        onError={handleImageError}
-                      />
-                    </td>
-                    <td className="py-5 px-6 text-[15px] font-bold text-[#111827]">{category.name}</td>
-                    <td className="py-5 px-6">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[12px] font-bold tracking-wide ${category.status === 'ACTIVE' ? 'bg-[#dcfce7] text-[#166534]' : 'bg-red-100 text-red-700'}`}>
-                        {category.status}
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[12px] font-bold tracking-wide ${brand.status === 'ACTIVE' ? 'bg-[#dcfce7] text-[#166534]' : 'bg-red-100 text-red-700'}`}>
+                        {brand.status}
                       </span>
                     </td>
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
                         <button 
-                          onClick={() => handleEdit(category)}
+                          onClick={() => handleEdit(brand)}
                           className="w-[36px] h-[36px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button 
-                          onClick={() => handleDeleteClick(category._id)}
+                          onClick={() => handleDeleteClick(brand._id)}
                           className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
@@ -222,14 +210,14 @@ export default function CategoriesPage() {
           </div>
         </div>
 
-        {/* Right Column: Add/Edit Category Form */}
-        {isAddCategoryOpen && (
+        {/* Right Column: Add/Edit Brand Form */}
+        {isAddBrandOpen && (
           <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-6 lg:p-8 transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Category' : 'Add New Category'}</h2>
+              <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Brand' : 'Add New Brand'}</h2>
               <button 
-                onClick={() => { setIsAddCategoryOpen(false); setEditingId(null); }}
+                onClick={() => { setIsAddBrandOpen(false); setEditingId(null); }}
                 className="w-[32px] h-[32px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -238,9 +226,9 @@ export default function CategoriesPage() {
 
             {/* Form */}
             <div className="space-y-6">
-              {/* Category Name */}
+              {/* Brand Name */}
               <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Category Name</label>
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Brand Name</label>
                 <input 
                   type="text" 
                   value={name}
@@ -267,43 +255,13 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              {/* Image Upload */}
-              <div>
-                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Category Image</label>
-                <div className="flex items-center gap-6">
-                  <div className="w-[80px] h-[80px] rounded-[16px] border border-slate-200 overflow-hidden shrink-0 bg-slate-50 flex items-center justify-center">
-                    {(previewUrl || image) ? (
-                      <img src={previewUrl || image} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          setImageFile(file);
-                          setPreviewUrl(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="w-full text-[14px] file:mr-4 file:py-2.5 file:px-5 file:rounded-[10px] file:border-0 file:text-sm file:font-semibold file:bg-[#eff6ff] file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" 
-                    />
-                    <p className="text-[12px] text-slate-500 mt-2">Recommended: 400x400px. JPG, PNG, WEBP.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Create/Update Button */}
               <div className="pt-2">
                 <button 
                   onClick={handleSubmit}
                   disabled={saving}
                   className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#2563eb] hover:bg-blue-700'} text-white h-[48px] rounded-[12px] font-bold text-[15px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {saving ? 'Saving...' : (editingId ? 'Update Category' : 'Create Category')}
+                  {saving ? 'Saving...' : (editingId ? 'Update Brand' : 'Create Brand')}
                 </button>
               </div>
             </div>
@@ -318,13 +276,13 @@ export default function CategoriesPage() {
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
-            <h3 className="text-[20px] font-bold text-center text-slate-900 mb-2">Delete Category?</h3>
+            <h3 className="text-[20px] font-bold text-center text-slate-900 mb-2">Delete Brand?</h3>
             <p className="text-slate-500 text-center text-[15px] mb-8 leading-relaxed">
-              Are you sure you want to delete this category? All associated products may be affected.
+              Are you sure you want to delete this brand? All associated products may be affected.
             </p>
             <div className="flex gap-3">
               <button 
-                onClick={() => setDeleteModal({ isOpen: false, categoryId: null })}
+                onClick={() => setDeleteModal({ isOpen: false, brandId: null })}
                 disabled={deleting}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 h-[48px] rounded-[14px] font-bold text-[15px] transition-colors"
               >
