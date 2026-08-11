@@ -60,12 +60,26 @@ export default function BrandsPage() {
     setIsAddBrandOpen(true);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setLogoFile(null);
+    setPreviewUrl('');
+    setLogo('');
+  };
+
   const handleEdit = (brand: IBrand) => {
     setEditingId(brand._id);
     setName(brand.name);
-    setLogo(getImageUrl(brand.logo) || '');
+    setLogo(brand.logo || '');
     setLogoFile(null);
-    setPreviewUrl('');
+    setPreviewUrl(brand.logo ? getImageUrl(brand.logo) : '');
     setStatus(brand.status);
     setDisplayOrder(brand.displayOrder || 0);
     setIsAddBrandOpen(true);
@@ -181,7 +195,18 @@ export default function BrandsPage() {
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">No brands found. Add your first brand!</td></tr>
                 ) : brands.map((brand) => (
                   <tr key={brand._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-6 text-[15px] font-bold text-[#111827]">{brand.name}</td>
+                    <td className="py-5 px-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-[48px] h-[48px] rounded-[10px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+                          {brand.logo ? (
+                            <img src={getImageUrl(brand.logo)} alt={brand.name} className="w-full h-full object-contain p-1" onError={(e) => handleImageError(e as any)} />
+                          ) : (
+                            <span className="text-[20px] font-bold text-slate-300">{brand.name.charAt(0)}</span>
+                          )}
+                        </div>
+                        <span className="text-[15px] font-bold text-[#111827]">{brand.name}</span>
+                      </div>
+                    </td>
                     <td className="py-5 px-6">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[12px] font-bold tracking-wide ${brand.status === 'ACTIVE' ? 'bg-[#dcfce7] text-[#166534]' : 'bg-red-100 text-red-700'}`}>
                         {brand.status}
@@ -235,6 +260,33 @@ export default function BrandsPage() {
                   onChange={e => setName(e.target.value)}
                   className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]" 
                 />
+              </div>
+
+              {/* Brand Logo */}
+              <div>
+                <label className="block text-[13px] font-bold text-[#111827] mb-2.5">Brand Logo</label>
+                {previewUrl ? (
+                  <div className="relative w-full h-[120px] rounded-[12px] border border-slate-200 overflow-hidden group bg-slate-50 flex items-center justify-center p-2">
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <label className="cursor-pointer bg-white text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        Replace
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                      </label>
+                      <button type="button" onClick={handleRemoveImage} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="w-full h-[120px] rounded-[12px] border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                    <div className="w-[40px] h-[40px] rounded-full bg-slate-50 group-hover:bg-white flex items-center justify-center mb-2 shadow-sm transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 group-hover:text-blue-500 transition-colors"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <span className="text-[13px] font-medium text-slate-500 group-hover:text-blue-600 transition-colors">Click to upload logo</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                  </label>
+                )}
               </div>
 
               {/* Status */}
