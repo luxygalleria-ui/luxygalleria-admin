@@ -19,3 +19,5 @@ export const getUserProfile = async () => {
   const response = await apiClient.get('/users/profile');
   return response.data;
 };
+
+export { getAdminToken, clearAdminSession } from '../lib/auth';

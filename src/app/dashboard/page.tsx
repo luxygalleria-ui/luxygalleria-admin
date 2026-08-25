@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import apiClient from '../../services/apiClient';
+import { useRouter } from 'next/navigation';
+import apiClient, { isUnauthenticated } from '../../services/apiClient';
+import { getAdminToken, clearAdminSession } from '../../lib/auth';
 
 interface RecentOrder {
   _id: string;
@@ -24,8 +26,17 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    // No usable session: redirect quietly rather than firing a request that
+    // can only come back 401.
+    if (!getAdminToken()) {
+      clearAdminSession();
+      router.replace('/login');
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         const res = await apiClient.get('/dashboard/stats');
@@ -33,13 +44,17 @@ export default function DashboardPage() {
           setStats(res.data.data);
         }
       } catch (err) {
-        console.error('Failed to fetch dashboard stats', err);
+        // A session that expired mid-flight is already being handled by the
+        // client interceptor - nothing to report.
+        if (!isUnauthenticated(err)) {
+          console.error('Failed to fetch dashboard stats', err);
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchStats();
-  }, []);
+  }, [router]);
 
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {

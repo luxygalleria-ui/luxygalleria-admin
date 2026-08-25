@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAdminToken, clearAdminSession } from '../lib/auth';
 
 const normalizeUrl = (url: string): string => url.trim().replace(/\/+$|^\s+|\s+$/g, '');
 
@@ -26,6 +27,16 @@ const apiClient = axios.create({
   },
 });
 
+// Requests that legitimately run without a token.
+const PUBLIC_PATHS = ['auth/login', 'auth/register', 'auth/forgot-password', 'auth/reset-password'];
+
+/** Marker for requests aborted client-side because there is no session. */
+export const UNAUTHENTICATED = 'unauthenticated';
+
+/** True for a request this client cancelled due to a missing session. */
+export const isUnauthenticated = (err: unknown): boolean =>
+  axios.isCancel(err) && (err as { message?: string }).message === UNAUTHENTICATED;
+
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
   (config) => {
@@ -36,9 +47,17 @@ apiClient.interceptors.request.use(
       config.url = config.url.substring(1);
     }
     // Attach the token from localStorage before each request
-    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+    const token = getAdminToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    } else if (typeof window !== 'undefined' && !PUBLIC_PATHS.some(p => (config.url || '').replace(/^\//, '').startsWith(p))) {
+      // No usable token: don't fire a request that is guaranteed to 401.
+      // Bail out to the login page instead.
+      clearAdminSession();
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+      return Promise.reject(new axios.CanceledError(UNAUTHENTICATED));
     }
     return config;
   },
@@ -56,8 +75,7 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized - redirect to login
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
+        clearAdminSession();
         window.location.href = '/login';
       }
     }

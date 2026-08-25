@@ -106,24 +106,16 @@ export default function LoginPage() {
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-[#8B5E34] focus:ring-[#8B5E34] border-slate-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-[#8B5E34] hover:text-[#7A4F2A]">
-                Forgot your password?
-              </a>
-            </div>
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              className="h-4 w-4 text-[#8B5E34] focus:ring-[#8B5E34] border-slate-300 rounded"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-900">
+              Remember me
+            </label>
           </div>
 
           <div>

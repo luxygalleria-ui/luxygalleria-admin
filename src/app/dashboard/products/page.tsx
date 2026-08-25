@@ -51,6 +51,8 @@ interface IProduct {
   images: string[];
   status: string;
   showOnLandingPage?: boolean;
+  isGifting?: boolean;
+  isNewArrival?: boolean;
   stock?: number;
   weight?: number;
 }
@@ -76,6 +78,8 @@ export default function ProductsPage() {
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [showOnLandingPage, setShowOnLandingPage] = useState(false);
+  const [isGifting, setIsGifting] = useState(false);
+  const [isNewArrival, setIsNewArrival] = useState(false);
   const [stock, setStock] = useState<number>(0);
   const [weight, setWeight] = useState<number>(0);
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -145,6 +149,8 @@ export default function ProductsPage() {
     setOfferText('');
     setKeyFeatures('');
     setShowOnLandingPage(false);
+    setIsGifting(false);
+    setIsNewArrival(false);
     setStock(0);
     setWeight(0);
     setExistingImages([]);
@@ -164,6 +170,8 @@ export default function ProductsPage() {
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
     setShowOnLandingPage(product.showOnLandingPage || false);
+    setIsGifting(product.isGifting || false);
+    setIsNewArrival(product.isNewArrival || false);
     setStock(product.stock || 0);
     setWeight(product.weight || 0);
     
@@ -351,6 +359,8 @@ export default function ProductsPage() {
     formData.append('offerText', offerText);
     formData.append('keyFeatures', keyFeatures);
     formData.append('showOnLandingPage', String(showOnLandingPage));
+    formData.append('isGifting', String(isGifting));
+    formData.append('isNewArrival', String(isNewArrival));
     
     // Sum stock across variants
     const totalStock = variantsWithWeight.reduce((acc, curr) => acc + curr.stock, 0);
@@ -839,6 +849,35 @@ export default function ProductsPage() {
                   </div>
                 );
               })()}
+
+              {/* Collections: Gifting / New Arrivals */}
+              <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-[12px] border border-slate-100">
+                <span className="text-[14px] font-bold text-slate-900">Collections</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isGifting"
+                    checked={isGifting}
+                    onChange={(e) => setIsGifting(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="isGifting" className="text-[14px] font-semibold text-slate-700 cursor-pointer">
+                    Gifting
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isNewArrival"
+                    checked={isNewArrival}
+                    onChange={(e) => setIsNewArrival(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="isNewArrival" className="text-[14px] font-semibold text-slate-700 cursor-pointer">
+                    New Arrivals
+                  </label>
+                </div>
+              </div>
 
               {/* Image Upload Component */}
               <div>

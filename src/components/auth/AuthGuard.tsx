@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAdminToken, clearAdminSession } from '../../lib/auth';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      router.push('/login');
+    // A token that is merely *present* is not enough - an expired one still
+    // mounts the dashboard and every page then 401s on mount.
+    if (!getAdminToken()) {
+      clearAdminSession();
+      router.replace('/login');
     } else {
       setIsAuthenticated(true);
     }
