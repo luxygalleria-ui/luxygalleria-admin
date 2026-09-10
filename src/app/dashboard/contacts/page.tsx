@@ -5,31 +5,14 @@ import toast from 'react-hot-toast';
 import axios, { isUnauthenticated } from '../../../services/apiClient';
 import { Mail, Phone, Calendar, Check, Trash2, Search, Archive, RotateCcw } from 'lucide-react';
 
-type ContactStatus = 'NEW' | 'READ' | 'RESOLVED';
-
-interface IContact {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  subject?: string;
-  message: string;
-  status: ContactStatus;
-  createdAt: string;
-}
-
-const FILTERS: { key: 'ALL' | ContactStatus; label: string }[] = [
-  { key: 'ALL', label: 'All' },
-  { key: 'NEW', label: 'Unread' },
-  { key: 'READ', label: 'Read' },
-  { key: 'RESOLVED', label: 'Resolved' },
-];
-
-const STATUS_BADGE: Record<ContactStatus, string> = {
-  NEW: 'bg-blue-50 text-blue-600',
-  READ: 'bg-slate-100 text-slate-500',
-  RESOLVED: 'bg-emerald-50 text-emerald-600',
-};
+import {
+  ContactStatus,
+  IContact,
+  FILTERS,
+  STATUS_BADGE,
+  STATUS_LABEL,
+  normalizeContacts,
+} from './contactUtils';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<IContact[]>([]);
@@ -57,12 +40,13 @@ export default function ContactsPage() {
         if (debouncedSearch) params.search = debouncedSearch;
 
         const res = await axios.get('/contacts', { params });
-        if (!cancelled && res.data.success) {
-          setContacts(res.data.data);
+        if (!cancelled) {
+          setContacts(normalizeContacts(res.data?.data));
         }
       } catch (err) {
         if (cancelled || isUnauthenticated(err)) return;
         console.error('Failed to fetch contacts', err);
+        setContacts([]);
         toast.error('Failed to load messages');
       } finally {
         if (!cancelled) setLoading(false);
@@ -204,14 +188,16 @@ export default function ContactsPage() {
                       </div>
                     )}
                   </div>
-                  <span className={`shrink-0 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${STATUS_BADGE[contact.status]}`}>
-                    {contact.status === 'NEW' ? 'Unread' : contact.status.toLowerCase()}
+                  <span className={`shrink-0 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${STATUS_BADGE[contact.status] ?? STATUS_BADGE.NEW}`}>
+                    {STATUS_LABEL[contact.status] ?? STATUS_LABEL.NEW}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-4">
                   <Calendar size={12} />
-                  {new Date(contact.createdAt).toLocaleString()}
+                  {Number.isNaN(new Date(contact.createdAt).getTime())
+                    ? 'Date unknown'
+                    : new Date(contact.createdAt).toLocaleString()}
                 </div>
 
                 {contact.subject && (
