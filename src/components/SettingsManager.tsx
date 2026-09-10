@@ -14,6 +14,7 @@ interface Settings {
   shippingBelow500g: number;
   shippingAbove500g: number;
   shippingWeightThreshold: number;
+  freeShippingThreshold: number;
 }
 
 export default function SettingsManager() {
@@ -27,6 +28,7 @@ export default function SettingsManager() {
     shippingBelow500g: 40,
     shippingAbove500g: 80,
     shippingWeightThreshold: 500,
+    freeShippingThreshold: 0,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,6 +148,17 @@ export default function SettingsManager() {
                 className="w-full border rounded px-3 py-2 text-sm bg-white"
                 placeholder="e.g. 80"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Free Shipping Above Order Total (₹)</label>
+              <input
+                type="number"
+                value={settings.freeShippingThreshold}
+                onChange={e => setSettings({ ...settings, freeShippingThreshold: Math.max(0, Number(e.target.value)) })}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                placeholder="e.g. 1000"
+              />
+              <p className="text-xs text-gray-500 mt-1">Orders at or above this subtotal ship free. Set to 0 to disable.</p>
             </div>
           </div>
         </div>
