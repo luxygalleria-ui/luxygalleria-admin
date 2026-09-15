@@ -137,7 +137,7 @@ export default function BannerForm({ banner, onClose, onSuccess }: BannerFormPro
           {/* Desktop Image */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Desktop Image (1200x400px) *
+              Desktop Image (2048x768px) *
             </label>
             {formData.image && !imageFile && (
               <p className="text-xs text-gray-500 mb-2">
@@ -158,7 +158,7 @@ export default function BannerForm({ banner, onClose, onSuccess }: BannerFormPro
           {/* Mobile Image */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Mobile Image (600x400px)
+              Mobile Image (1080x1080px, square)
             </label>
             {formData.mobileImage && !mobileImageFile && (
               <p className="text-xs text-gray-500 mb-2">
