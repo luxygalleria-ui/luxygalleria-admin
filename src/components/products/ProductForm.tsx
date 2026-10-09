@@ -32,12 +32,14 @@ interface ProductFormProps {
 
 const inputClass = 'w-full border border-slate-200 rounded-[12px] px-4 py-2.5 text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 const labelClass = 'block text-[13px] font-semibold text-slate-600 mb-2';
+const CUSTOM = '__custom__';
 
 export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdit, collectionFlag, submitLabel = 'Save Product' }: ProductFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [categoryId, setCategoryId] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -51,7 +53,7 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
       .then((res) => {
         const active = (res.data.data || []).filter((c: { status: string }) => c.status === 'ACTIVE');
         setCategories(active);
-        if (active[0]) setCategoryId((prev) => prev || active[0]._id);
+        setCategoryId((prev) => prev || active[0]?._id || CUSTOM);
       })
       .catch(() => toast.error('Failed to load categories'));
   }, []);
@@ -65,6 +67,8 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
     setPrice(editing ? String(v?.offerPrice ?? v?.price ?? '') : '');
     setStock(editing ? String(v?.stock ?? 0) : '');
     if (catId) setCategoryId(catId);
+    else if (editing?.category) setCategoryId(CUSTOM);
+    setCustomCategory(editing && !catId ? editing.category || '' : '');
     setImageFile(null);
     setPreviewUrl(editing?.images?.[0] ? getImageUrl(editing.images[0]) : '');
   }, [editing]);
@@ -86,7 +90,11 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const category = categories.find((c) => c._id === categoryId);
+    // A typed name matching an existing category reuses it instead of creating a near-duplicate
+    const typed = customCategory.trim();
+    const category = categoryId === CUSTOM
+      ? categories.find((c) => c.name.toLowerCase() === typed.toLowerCase()) || (typed ? { _id: '', name: typed } : undefined)
+      : categories.find((c) => c._id === categoryId);
     if (!name.trim() || !description.trim() || !category) return toast.error('Name, category and description are required');
     if (!(Number(price) > 0)) return toast.error('Price must be greater than zero');
     if (!Number.isInteger(Number(stock)) || Number(stock) < 0) return toast.error('Stock must be a whole number, 0 or more');
@@ -170,11 +178,14 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
         <div>
           <label htmlFor="pf-category" className={labelClass}>Category *</label>
           <select id="pf-category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required className={inputClass}>
-            {categories.length === 0 && <option value="">No categories</option>}
             {categories.map((c) => (
               <option key={c._id} value={c._id}>{c.name}</option>
             ))}
+            <option value={CUSTOM}>Custom…</option>
           </select>
+          {categoryId === CUSTOM && (
+            <input aria-label="Custom category name" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} required placeholder="Type a category" className={`${inputClass} mt-2`} />
+          )}
         </div>
         <div>
           <label htmlFor="pf-price" className={labelClass}>Price *</label>
