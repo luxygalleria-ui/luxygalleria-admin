@@ -14,7 +14,6 @@ export default function GiftingPage() {
       subtitleKey="giftingSubtitle"
       titlePlaceholder="Gifting"
       subtitlePlaceholder="Curated picks, ready to be wrapped."
-      addHint="Gifting is exclusive: adding a New Arrivals product here removes it from New Arrivals."
     />
   );
 }

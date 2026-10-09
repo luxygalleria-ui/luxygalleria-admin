@@ -15,7 +15,6 @@ export default function NewArrivalsPage() {
       titlePlaceholder="New Arrivals"
       subtitlePlaceholder="The latest additions to the collection."
       excludeFlag="isGifting"
-      addHint="Gifting products are exclusive to /gifting and are not listed here."
     />
   );
 }

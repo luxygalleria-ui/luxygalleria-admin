@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../services/apiClient';
 import { getImageUrl, handleImageError } from '../lib/imageUtils';
+import ProductForm, { type CreatedProduct } from './products/ProductForm';
 
 interface ICollectionProduct {
   _id: string;
@@ -30,10 +31,8 @@ export interface CollectionManagerProps {
   subtitleKey: 'giftingSubtitle' | 'newArrivalsSubtitle';
   titlePlaceholder: string;
   subtitlePlaceholder: string;
-  /** Products carrying this flag belong exclusively elsewhere: hidden from both the list and the Add Products selector. */
+  /** Products carrying this flag belong exclusively elsewhere: hidden from the list. */
   excludeFlag?: 'isGifting' | 'isNewArrival';
-  /** Short note shown under "Add Products". */
-  addHint?: string;
 }
 
 const thumbOf = (p: ICollectionProduct) => getImageUrl(p.images?.[0] || p.variants?.find(v => v.image)?.image || '');
@@ -42,13 +41,12 @@ const priceOf = (p: ICollectionProduct) => p.variants?.[0]?.offerPrice ?? p.vari
 /** Manage one storefront collection: its products, their order, and the page heading. */
 export default function CollectionManager({
   label, storefrontPath, flag, orderField, saveEndpoint, titleKey, subtitleKey, titlePlaceholder, subtitlePlaceholder,
-  excludeFlag, addHint,
+  excludeFlag,
 }: CollectionManagerProps) {
   const [products, setProducts] = useState<ICollectionProduct[]>([]);
   // Ordered list of product ids in the collection; savedIds is the last persisted state (for the unsaved-changes check)
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -86,15 +84,6 @@ export default function CollectionManager({
 
   const byId = useMemo(() => new Map(products.map(p => [p._id, p])), [products]);
 
-  const available = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return products.filter(p =>
-      !collectionIds.includes(p._id) &&
-      !(excludeFlag && p[excludeFlag]) &&
-      (!q || p.name.toLowerCase().includes(q))
-    );
-  }, [products, collectionIds, search, excludeFlag]);
-
   const isDirty = collectionIds.join(',') !== savedIds.join(',');
 
   const move = (index: number, dir: -1 | 1) => {
@@ -121,6 +110,21 @@ export default function CollectionManager({
       toast.error(err.response?.data?.message || `Failed to save ${label} products`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Append a newly created product to the saved collection; pending reorders stay unsaved
+  const addCreated = async (product: CreatedProduct) => {
+    setProducts(prev => [...prev, product as ICollectionProduct]);
+    const ids = [...savedIds, product._id];
+    try {
+      const res = await axios.put(saveEndpoint, { productIds: ids });
+      if (!res.data.success) throw new Error(res.data.message);
+      setSavedIds(ids);
+      setCollectionIds(prev => [...prev, product._id]);
+      toast.success(`Product created and added to ${label}`);
+    } catch {
+      toast.error(`Product created, but adding it to ${label} failed`);
     }
   };
 
@@ -190,7 +194,7 @@ export default function CollectionManager({
           {loading ? (
             <p className="py-8 text-center text-slate-500">Loading products...</p>
           ) : collectionIds.length === 0 ? (
-            <p className="py-8 text-center text-slate-500">No {label} products yet. Add some from the list.</p>
+            <p className="py-8 text-center text-slate-500">No {label} products yet. Create one with the form.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {collectionIds.map((id, index) => {
@@ -216,35 +220,11 @@ export default function CollectionManager({
           )}
         </div>
 
-        {/* Searchable selector of products not yet in the collection */}
+        {/* Create a new product directly in this collection */}
         <div className="w-full xl:w-[420px] shrink-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60">
           <h2 className="text-[16px] font-medium text-slate-800 mb-1">Add Products</h2>
-          <p className="text-[13px] text-slate-500 mb-4">{addHint || 'Search and add products to this collection.'}</p>
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search products by name"
-            aria-label="Search products"
-            className={`${inputClass} mb-4`}
-          />
-          <ul className="flex flex-col gap-2 max-h-[520px] overflow-y-auto pr-1">
-            {!loading && available.length === 0 && (
-              <li className="py-6 text-center text-[13px] text-slate-500">No matching products</li>
-            )}
-            {available.map(p => (
-              <li key={p._id} className="flex items-center gap-3 p-2 rounded-[12px] hover:bg-slate-50">
-                <img src={thumbOf(p)} alt={p.name} onError={e => handleImageError(e as any)} className="w-10 h-10 rounded-[8px] object-cover bg-slate-50 border border-slate-100 shrink-0" />
-                <p className="flex-1 min-w-0 text-[14px] text-slate-700 truncate">{p.name}</p>
-                <button
-                  onClick={() => setCollectionIds(ids => [...ids, p._id])}
-                  className="px-3 h-8 rounded-lg text-[13px] font-medium text-[#2563eb] hover:bg-blue-50 shrink-0"
-                >
-                  Add
-                </button>
-              </li>
-            ))}
-          </ul>
+          <p className="text-[13px] text-slate-500 mb-6">Create a new product; it is added to the end of this collection.</p>
+          <ProductForm onCreated={addCreated} />
         </div>
       </div>
     </div>
