@@ -5,30 +5,41 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ImagePlus, X } from 'lucide-react';
 import apiClient from '@/services/apiClient';
+import { getImageUrl } from '@/lib/imageUtils';
 
 export interface CreatedProduct {
   _id: string;
   name: string;
+  description?: string;
   category?: string;
+  categoryId?: string | { _id: string };
   images?: string[];
-  variants?: { offerPrice?: number; price?: number; image?: string }[];
+  variants?: { offerPrice?: number; price?: number; stock?: number; image?: string }[];
 }
 
 interface ProductFormProps {
   /** Called with the product the backend created. */
   onCreated?: (product: CreatedProduct) => void | Promise<void>;
+  /** Product being edited; null/undefined = create mode. */
+  editing?: CreatedProduct | null;
+  /** Called with the product the backend updated. */
+  onUpdated?: (product: CreatedProduct) => void;
+  onCancelEdit?: () => void;
+  /** Collection the product is created in, so it never lands in another collection or the main Shop. */
+  collectionFlag: 'isGifting' | 'isNewArrival';
   submitLabel?: string;
 }
 
 const inputClass = 'w-full border border-slate-200 rounded-[12px] px-4 py-2.5 text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 const labelClass = 'block text-[13px] font-semibold text-slate-600 mb-2';
 
-export default function ProductForm({ onCreated, submitLabel = 'Save Product' }: ProductFormProps) {
+export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdit, collectionFlag, submitLabel = 'Save Product' }: ProductFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [categoryId, setCategoryId] = useState('');
   const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -40,13 +51,26 @@ export default function ProductForm({ onCreated, submitLabel = 'Save Product' }:
       .then((res) => {
         const active = (res.data.data || []).filter((c: { status: string }) => c.status === 'ACTIVE');
         setCategories(active);
-        if (active[0]) setCategoryId(active[0]._id);
+        if (active[0]) setCategoryId((prev) => prev || active[0]._id);
       })
       .catch(() => toast.error('Failed to load categories'));
   }, []);
 
+  // Load the product being edited into the form (or clear it when editing ends)
+  useEffect(() => {
+    const v = editing?.variants?.[0];
+    const catId = typeof editing?.categoryId === 'object' ? editing.categoryId._id : editing?.categoryId;
+    setName(editing?.name || '');
+    setDescription(editing?.description || '');
+    setPrice(editing ? String(v?.offerPrice ?? v?.price ?? '') : '');
+    setStock(editing ? String(v?.stock ?? 0) : '');
+    if (catId) setCategoryId(catId);
+    setImageFile(null);
+    setPreviewUrl(editing?.images?.[0] ? getImageUrl(editing.images[0]) : '');
+  }, [editing]);
+
   // Free the blob URL when the preview changes or the form unmounts
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+  useEffect(() => () => { if (previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
   const pickImage = (file?: File) => {
     if (!file) return;
@@ -65,7 +89,8 @@ export default function ProductForm({ onCreated, submitLabel = 'Save Product' }:
     const category = categories.find((c) => c._id === categoryId);
     if (!name.trim() || !description.trim() || !category) return toast.error('Name, category and description are required');
     if (!(Number(price) > 0)) return toast.error('Price must be greater than zero');
-    if (!imageFile) return toast.error('Please add a product image');
+    if (!Number.isInteger(Number(stock)) || Number(stock) < 0) return toast.error('Stock must be a whole number, 0 or more');
+    if (!imageFile && !previewUrl) return toast.error('Please add a product image');
 
     const p = Number(price);
     const formData = new FormData();
@@ -73,21 +98,33 @@ export default function ProductForm({ onCreated, submitLabel = 'Save Product' }:
     formData.append('description', description.trim());
     formData.append('category', category.name);
     formData.append('categoryId', category._id);
-    // ponytail: single "Standard" variant with 0 stock; edit sizes/stock on the Products page
-    formData.append(
-      'variants',
-      JSON.stringify([{ size: 'Standard', volume: 'Standard', flavor: 'Default', price: p, offerPrice: p, oldPrice: p, actualPrice: p, stock: 0, weight: 0 }])
-    );
-    formData.append('imageFiles', imageFile);
+    const priced = { price: p, offerPrice: p, oldPrice: p, actualPrice: p, stock: Number(stock) };
+    // ponytail: price/stock edit only the first variant; edit other sizes on the Products page
+    const variants = editing?.variants?.length
+      ? editing.variants.map((v, i) => (i === 0 ? { ...v, ...priced } : v))
+      : [{ size: 'Standard', volume: 'Standard', flavor: 'Default', weight: 0, ...priced }];
+    formData.append('variants', JSON.stringify(variants));
+    if (!editing) formData.append(collectionFlag, 'true');
+    // A new file replaces the images; otherwise the backend needs the existing ones sent back
+    if (imageFile) formData.append('imageFiles', imageFile);
+    else editing?.images?.forEach((img) => formData.append('images', img));
 
     setSaving(true);
     try {
-      const res = await apiClient.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setName('');
-      setDescription('');
-      setPrice('');
-      clearImage();
-      await onCreated?.(res.data.data);
+      const headers = { 'Content-Type': 'multipart/form-data' };
+      if (editing) {
+        const res = await apiClient.put(`/products/${editing._id}`, formData, { headers });
+        onUpdated?.(res.data.data);
+        toast.success('Product updated');
+      } else {
+        const res = await apiClient.post('/products', formData, { headers });
+        setName('');
+        setDescription('');
+        setPrice('');
+        setStock('');
+        clearImage();
+        await onCreated?.(res.data.data);
+      }
     } catch (err) {
       toast.error((axios.isAxiosError(err) && err.response?.data?.message) || 'Failed to save product');
     } finally {
@@ -149,6 +186,11 @@ export default function ProductForm({ onCreated, submitLabel = 'Save Product' }:
       </div>
 
       <div>
+        <label htmlFor="pf-stock" className={labelClass}>Stock Quantity *</label>
+        <input id="pf-stock" type="number" min="0" step="1" value={stock} onChange={(e) => setStock(e.target.value)} required placeholder="0" className={inputClass} />
+      </div>
+
+      <div>
         <label htmlFor="pf-description" className={labelClass}>Subtitle / Description *</label>
         <textarea id="pf-description" value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} placeholder="Short description shown on the product" className={`${inputClass} resize-none`} />
       </div>
@@ -158,8 +200,13 @@ export default function ProductForm({ onCreated, submitLabel = 'Save Product' }:
         disabled={saving}
         className="bg-[#2563eb] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
       >
-        {saving ? 'Saving...' : submitLabel}
+        {saving ? 'Saving...' : editing ? 'Update Product' : submitLabel}
       </button>
+      {editing && (
+        <button type="button" onClick={onCancelEdit} disabled={saving} className="text-[14px] font-medium text-slate-500 hover:text-slate-700">
+          Cancel editing
+        </button>
+      )}
     </form>
   );
 }

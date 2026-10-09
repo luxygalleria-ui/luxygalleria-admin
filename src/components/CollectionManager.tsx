@@ -49,6 +49,7 @@ export default function CollectionManager({
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<CreatedProduct | null>(null);
 
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
@@ -113,18 +114,50 @@ export default function CollectionManager({
     }
   };
 
-  // Append a newly created product to the saved collection; pending reorders stay unsaved
-  const addCreated = async (product: CreatedProduct) => {
-    setProducts(prev => [...prev, product as ICollectionProduct]);
-    const ids = [...savedIds, product._id];
+  // Persist a newly added product onto the saved collection right away, so it survives a refresh.
+  // Based on savedIds so pending reorders stay unsaved; on failure the change stays listed as unsaved.
+  const persist = async (ids: string[], success: string, failure: string) => {
+    setSaving(true);
     try {
       const res = await axios.put(saveEndpoint, { productIds: ids });
       if (!res.data.success) throw new Error(res.data.message);
       setSavedIds(ids);
-      setCollectionIds(prev => [...prev, product._id]);
-      toast.success(`Product created and added to ${label}`);
+      toast.success(success);
     } catch {
-      toast.error(`Product created, but adding it to ${label} failed`);
+      toast.error(`${failure}. Click "Save Changes" to retry`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addCreated = async (product: CreatedProduct) => {
+    setProducts(prev => [...prev, product as ICollectionProduct]);
+    setCollectionIds(prev => [...prev, product._id]);
+    await persist([...savedIds, product._id], `Product created and added to ${label}`, `Product created, but saving ${label} failed`);
+  };
+
+  const updateEdited = (product: CreatedProduct) => {
+    setProducts(prev => prev.map(p => (p._id === product._id ? { ...p, ...product } : p)));
+    setEditing(null);
+  };
+
+  // Collection products exist only on this page, so removing one deletes it; merely un-assigning
+  // it would turn it into a general product that shows up in the main Shop / homepage.
+  const remove = async (p: ICollectionProduct) => {
+    if (!window.confirm(`Delete "${p.name}" permanently? This cannot be undone.`)) return;
+    setSaving(true);
+    try {
+      await axios.delete(`/products/${p._id}`);
+      const drop = (ids: string[]) => ids.filter(x => x !== p._id);
+      setCollectionIds(drop);
+      setSavedIds(drop);
+      setProducts(prev => prev.filter(x => x._id !== p._id));
+      if (editing?._id === p._id) setEditing(null);
+      toast.success(`"${p.name}" deleted`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete product');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -211,7 +244,8 @@ export default function CollectionManager({
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => move(index, -1)} disabled={index === 0} aria-label={`Move ${p.name} up`} className="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30">↑</button>
                       <button onClick={() => move(index, 1)} disabled={index === collectionIds.length - 1} aria-label={`Move ${p.name} down`} className="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30">↓</button>
-                      <button onClick={() => setCollectionIds(ids => ids.filter(x => x !== id))} className="ml-2 px-3 h-8 rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50">Remove</button>
+                      <button onClick={() => setEditing(p as CreatedProduct)} disabled={saving} className="ml-2 px-3 h-8 rounded-lg text-[13px] font-medium text-[#2563eb] hover:bg-blue-50 disabled:opacity-30">Edit</button>
+                      <button onClick={() => remove(p)} disabled={saving} className="px-3 h-8 rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50 disabled:opacity-30">Remove</button>
                     </div>
                   </li>
                 );
@@ -222,9 +256,9 @@ export default function CollectionManager({
 
         {/* Create a new product directly in this collection */}
         <div className="w-full xl:w-[420px] shrink-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60">
-          <h2 className="text-[16px] font-medium text-slate-800 mb-1">Add Products</h2>
-          <p className="text-[13px] text-slate-500 mb-6">Create a new product; it is added to the end of this collection.</p>
-          <ProductForm onCreated={addCreated} />
+          <h2 className="text-[16px] font-medium text-slate-800 mb-1">{editing ? 'Edit Product' : 'Add Products'}</h2>
+          <p className="text-[13px] text-slate-500 mb-6">{editing ? `Editing "${editing.name}".` : 'Create a new product; it is added to the end of this collection.'}</p>
+          <ProductForm onCreated={addCreated} editing={editing} onUpdated={updateEdited} onCancelEdit={() => setEditing(null)} collectionFlag={flag} />
         </div>
       </div>
     </div>
