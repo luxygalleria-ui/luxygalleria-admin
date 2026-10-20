@@ -141,9 +141,17 @@ export default function CollectionManager({
     setEditing(null);
   };
 
-  // Collection products exist only on this page, so removing one deletes it; merely un-assigning
+  // Gifting products exist only on this page, so removing one deletes it; merely un-assigning
   // it would turn it into a general product that shows up in the main Shop / homepage.
+  // New Arrivals are also Shop products, so removing one just takes it out of the collection.
   const remove = async (p: ICollectionProduct) => {
+    if (flag === 'isNewArrival') {
+      if (!window.confirm(`Remove "${p.name}" from ${label}? It stays in the Shop.`)) return;
+      const drop = (ids: string[]) => ids.filter(x => x !== p._id);
+      setCollectionIds(drop);
+      if (editing?._id === p._id) setEditing(null);
+      return persist(drop(savedIds), `"${p.name}" removed from ${label}`, `Removing from ${label} failed`);
+    }
     if (!window.confirm(`Delete "${p.name}" permanently? This cannot be undone.`)) return;
     setSaving(true);
     try {
@@ -213,7 +221,7 @@ export default function CollectionManager({
           <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div>
               <h2 className="text-[16px] font-medium text-slate-800">{label} Products ({collectionIds.length})</h2>
-              <p className="text-[13px] text-slate-500 mt-1">Shown only on {storefrontPath} (hidden from the main Shop), in this order.</p>
+              <p className="text-[13px] text-slate-500 mt-1">{flag === 'isGifting' ? `Shown only on ${storefrontPath} (hidden from the main Shop)` : `Shown on ${storefrontPath} and in the main Shop`}, in this order.</p>
             </div>
             <button
               onClick={saveList}
