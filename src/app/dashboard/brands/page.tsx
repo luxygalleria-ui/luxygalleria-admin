@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
@@ -13,6 +13,34 @@ interface IBrand {
   displayOrder: number;
 }
 
+function BrandThumbnail({ logo, name }: { logo?: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = name ? name.charAt(0).toUpperCase() : 'B';
+  const url = getImageUrl(logo);
+
+  if (failed || !logo || url.startsWith('data:')) {
+    return (
+      <div className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-[10px] bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-xs">
+        <span className="text-[17px] sm:text-[19px] font-bold text-slate-500 select-none">{initial}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-[10px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+      <img
+        src={url}
+        alt={name}
+        className="w-full h-full object-contain p-1"
+        onError={(e) => {
+          handleImageError(e);
+          setFailed(true);
+        }}
+      />
+    </div>
+  );
+}
+
 export default function BrandsPage() {
   const [isAddBrandOpen, setIsAddBrandOpen] = useState(false);
   const [brands, setBrands] = useState<IBrand[]>([]);
@@ -21,6 +49,7 @@ export default function BrandsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, brandId: string | null}>({ isOpen: false, brandId: null });
   const [deleting, setDeleting] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -48,6 +77,14 @@ export default function BrandsPage() {
   useEffect(() => {
     fetchBrands();
   }, []);
+
+  useEffect(() => {
+    if (isAddBrandOpen && formRef.current) {
+      if (window.innerWidth < 1280) {
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [isAddBrandOpen]);
 
   const openAddForm = () => {
     setEditingId(null);
@@ -167,20 +204,24 @@ export default function BrandsPage() {
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         
         {/* Left Column: Brand Catalog */}
-        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[16px] font-medium text-slate-800">Product Brands</h2>
+        <div className="flex-1 min-w-0 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div>
+              <h2 className="text-[18px] sm:text-[20px] font-bold text-slate-900">Product Brands</h2>
+              <p className="text-[13px] text-slate-500 mt-0.5">Manage your catalog brands</p>
+            </div>
             <button 
               onClick={openAddForm}
-              className="bg-[#2563eb] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
+              className="bg-[#2563eb] hover:bg-blue-700 text-white px-5 sm:px-6 py-2.5 rounded-[12px] font-semibold text-[14px] flex items-center justify-center gap-2 transition-colors shadow-sm w-full sm:w-auto"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Add New Brand
             </button>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[550px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[45%]">Name</th>
@@ -197,13 +238,7 @@ export default function BrandsPage() {
                   <tr key={brand._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-[48px] h-[48px] rounded-[10px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden relative">
-                          {brand.logo ? (
-                            <img src={getImageUrl(brand.logo)} alt={brand.name} className="w-full h-full object-contain p-1" onError={(e) => handleImageError(e as any)} />
-                          ) : (
-                            <span className="text-[20px] font-bold text-slate-300">{brand.name.charAt(0)}</span>
-                          )}
-                        </div>
+                        <BrandThumbnail logo={brand.logo} name={brand.name} />
                         <span className="text-[15px] font-bold text-[#111827]">{brand.name}</span>
                       </div>
                     </td>
@@ -216,13 +251,15 @@ export default function BrandsPage() {
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => handleEdit(brand)}
-                          className="w-[36px] h-[36px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          aria-label={`Edit ${brand.name}`}
+                          className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(brand._id)}
-                          className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
+                          aria-label={`Delete ${brand.name}`}
+                          className="w-[38px] h-[38px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
@@ -233,21 +270,62 @@ export default function BrandsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View (visible on mobile < sm) */}
+          <div className="block sm:hidden space-y-3">
+            {loading ? (
+              <div className="py-8 text-center text-slate-500">Loading brands...</div>
+            ) : brands.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">No brands found. Add your first brand!</div>
+            ) : (
+              brands.map((brand) => (
+                <div key={brand._id} className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <BrandThumbnail logo={brand.logo} name={brand.name} />
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-bold text-[#111827] truncate">{brand.name}</h3>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-1 ${brand.status === 'ACTIVE' ? 'bg-[#dcfce7] text-[#166534]' : 'bg-red-100 text-red-700'}`}>
+                        {brand.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                      onClick={() => handleEdit(brand)}
+                      aria-label={`Edit ${brand.name}`}
+                      className="w-[42px] h-[42px] rounded-xl bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors touch-manipulation"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(brand._id)}
+                      aria-label={`Delete ${brand.name}`}
+                      className="w-[42px] h-[42px] rounded-xl bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors touch-manipulation"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Right Column: Add/Edit Brand Form */}
         {isAddBrandOpen && (
-          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-6 lg:p-8 transition-all duration-300">
+          <div ref={formRef} className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[20px] sm:rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-5 sm:p-7 lg:p-8 transition-all duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Brand' : 'Add New Brand'}</h2>
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Brand' : 'Add New Brand'}</h2>
               <button 
                 onClick={() => { setIsAddBrandOpen(false); setEditingId(null); }}
-                className="w-[32px] h-[32px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+                className="w-[36px] h-[36px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
+
+            {/* Form */}
 
             {/* Form */}
             <div className="space-y-6">

@@ -12,10 +12,15 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   let title = 'Dashboard';
   if (pathname.includes('/products')) title = 'Products';
   else if (pathname.includes('/categories')) title = 'Categories';
+  else if (pathname.includes('/brands')) title = 'Brands';
   else if (pathname.includes('/erp')) title = 'ERP Integration';
   else if (pathname.includes('/orders')) title = 'Orders';
   else if (pathname.includes('/banners')) title = 'Banners';
   else if (pathname.includes('/customers')) title = 'Customers';
+  else if (pathname.includes('/settings')) title = 'Settings';
+  else if (pathname.includes('/contacts')) title = 'Messages';
+  else if (pathname.includes('/gifting')) title = 'Gifting';
+  else if (pathname.includes('/new-arrivals')) title = 'New Arrivals';
 
   return (
     <header className="bg-white border-b border-slate-200 h-[64px] lg:h-[100px] flex items-center justify-between px-4 sm:px-6 lg:px-8 z-40 sticky top-0 shrink-0">

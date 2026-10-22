@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
@@ -11,6 +11,32 @@ interface ICategory {
   image: string;
   status: string;
   displayOrder: number;
+}
+
+function CategoryThumbnail({ image, name }: { image?: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const initial = name ? name.charAt(0).toUpperCase() : 'C';
+  const url = getImageUrl(image);
+
+  if (failed || !image || url.startsWith('data:')) {
+    return (
+      <div className="w-[46px] h-[46px] sm:w-[54px] sm:h-[54px] rounded-[12px] bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-xs">
+        <span className="text-[18px] sm:text-[20px] font-bold text-slate-500 select-none">{initial}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={url} 
+      alt={name} 
+      className="w-[46px] h-[46px] sm:w-[54px] sm:h-[54px] rounded-[12px] object-cover bg-slate-100 shadow-xs" 
+      onError={(e) => {
+        handleImageError(e);
+        setFailed(true);
+      }}
+    />
+  );
 }
 
 export default function CategoriesPage() {
@@ -151,29 +177,44 @@ export default function CategoriesPage() {
     }
   };
 
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isAddCategoryOpen && formRef.current) {
+      // Smooth scroll into view on mobile so user sees the form
+      if (window.innerWidth < 1280) {
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [isAddCategoryOpen]);
+
   return (
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         
         {/* Left Column: Category Catalog */}
-        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[16px] font-medium text-slate-800">Product Categories</h2>
+        <div className="flex-1 min-w-0 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div>
+              <h2 className="text-[18px] sm:text-[20px] font-bold text-slate-900">Product Categories</h2>
+              <p className="text-[13px] text-slate-500 mt-0.5">Manage your catalog categories</p>
+            </div>
             <button 
               onClick={openAddForm}
-              className="bg-[#2563eb] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
+              className="bg-[#2563eb] hover:bg-blue-700 text-white px-5 sm:px-6 py-2.5 rounded-[12px] font-semibold text-[14px] flex items-center justify-center gap-2 transition-colors shadow-sm w-full sm:w-auto"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Add New Category
             </button>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          {/* Desktop Table View (hidden on small mobile screens) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[550px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[20%]">Image</th>
-                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[40%]">Name</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[18%]">Image</th>
+                  <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[42%]">Name</th>
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 w-[20%]">Status</th>
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-r-[12px] w-[20%]">Actions</th>
                 </tr>
@@ -186,12 +227,7 @@ export default function CategoriesPage() {
                 ) : categories.map((category) => (
                   <tr key={category._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img 
-                        src={getImageUrl(category.image)} 
-                        alt={category.name} 
-                        className="w-[54px] h-[54px] rounded-[12px] object-cover bg-slate-100 shadow-sm" 
-                        onError={handleImageError}
-                      />
+                      <CategoryThumbnail image={category.image} name={category.name} />
                     </td>
                     <td className="py-5 px-6 text-[15px] font-bold text-[#111827]">{category.name}</td>
                     <td className="py-5 px-6">
@@ -203,13 +239,15 @@ export default function CategoriesPage() {
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => handleEdit(category)}
-                          className="w-[36px] h-[36px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          aria-label={`Edit ${category.name}`}
+                          className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(category._id)}
-                          className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
+                          aria-label={`Delete ${category.name}`}
+                          className="w-[38px] h-[38px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
@@ -220,17 +258,56 @@ export default function CategoriesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View (visible on mobile < sm) */}
+          <div className="block sm:hidden space-y-3">
+            {loading ? (
+              <div className="py-8 text-center text-slate-500">Loading categories...</div>
+            ) : categories.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">No categories found. Add your first category!</div>
+            ) : (
+              categories.map((category) => (
+                <div key={category._id} className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CategoryThumbnail image={category.image} name={category.name} />
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-bold text-[#111827] truncate">{category.name}</h3>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-1 ${category.status === 'ACTIVE' ? 'bg-[#dcfce7] text-[#166534]' : 'bg-red-100 text-red-700'}`}>
+                        {category.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                      onClick={() => handleEdit(category)}
+                      aria-label={`Edit ${category.name}`}
+                      className="w-[42px] h-[42px] rounded-xl bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors touch-manipulation"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(category._id)}
+                      aria-label={`Delete ${category.name}`}
+                      className="w-[42px] h-[42px] rounded-xl bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors touch-manipulation"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Right Column: Add/Edit Category Form */}
         {isAddCategoryOpen && (
-          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-6 lg:p-8 transition-all duration-300">
+          <div ref={formRef} className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[20px] sm:rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-5 sm:p-7 lg:p-8 transition-all duration-300">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Category' : 'Add New Category'}</h2>
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Category' : 'Add New Category'}</h2>
               <button 
                 onClick={() => { setIsAddCategoryOpen(false); setEditingId(null); }}
-                className="w-[32px] h-[32px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
+                className="w-[36px] h-[36px] rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>

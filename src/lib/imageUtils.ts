@@ -21,29 +21,46 @@ export const getImageUrl = (imagePath: string | undefined | null): string => {
 
   // Backend uploads path
   if (imagePath.startsWith('/uploads/')) {
-    const baseUrl = 
-      process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/api.*$/, '') || 
-      'http://localhost:5000';
+    const rawUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL;
+    const baseUrl = rawUrl 
+      ? rawUrl.replace(/\/api(\/v1)?\/?$/i, '').replace(/\/+$/, '')
+      : 'http://localhost:5000';
     return `${baseUrl}${imagePath}`;
   }
 
-  // Data URL (base64)
+  // Data URL (base64 or inline SVG)
   if (imagePath.startsWith('data:')) {
     return imagePath;
   }
 
+  // Other root-relative paths are local public assets (e.g. /luxy_logo.png)
+  if (imagePath.startsWith('/')) {
+    return imagePath;
+  }
+
   // Fallback to placeholder for unrecognized formats
-  return getPlaceholderUrl('Invalid image');
+  return getPlaceholderUrl('No image');
 };
 
 /**
- * Get placeholder URL with optional message
+ * Get placeholder URL with optional message.
+ * Returns a self-contained inline SVG data URI so it always renders — no
+ * dependency on any external placeholder service (which can be down/blocked).
  * @param message - Optional message to display
- * @returns Placeholder image URL
+ * @returns Placeholder image data URI
  */
-export const getPlaceholderUrl = (message: string = 'Image not available'): string => {
-  const encodedMessage = encodeURIComponent(message);
-  return `https://via.placeholder.com/300?text=${encodedMessage}`;
+export const getPlaceholderUrl = (message: string = 'No image'): string => {
+  const label = (message || 'No image').replace(/[<>&"']/g, ' ').slice(0, 30);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#f8fafc"/>
+  <g fill="none" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="95" y="102" width="110" height="86" rx="10"/>
+    <circle cx="126" cy="132" r="9"/>
+    <path d="M108 184 L140 156 L160 173 L180 152 L196 166"/>
+  </g>
+  <text x="150" y="226" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8" text-anchor="middle">${label}</text>
+</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 };
 
 /**
@@ -56,15 +73,18 @@ export const handleImageError = (
   fallbackUrl?: string
 ): void => {
   const img = event.currentTarget;
-  
-  if (fallbackUrl) {
-    img.src = fallbackUrl;
-  } else {
-    img.src = getPlaceholderUrl('Image failed to load');
+  const fallback = fallbackUrl || getPlaceholderUrl('Image unavailable');
+
+  // Already showing the fallback or inline SVG — stop here to avoid recursion
+  if (img.src === fallback || img.src.startsWith('data:image/svg+xml')) {
+    return;
   }
-  
-  // Add visual indication of error
-  img.classList.add('opacity-75', 'grayscale');
+
+  // Remove srcset/sizes so Next Image or responsive browsers don't re-query failed sources
+  img.removeAttribute('srcset');
+  img.removeAttribute('sizes');
+  img.onerror = null;
+  img.src = fallback;
 };
 
 /**
@@ -80,9 +100,9 @@ export const getSafeImageUrl = (
   const primary = getImageUrl(primaryPath);
   
   // If primary looks like an error placeholder, try fallback
-  if (primary.includes('placeholder') && fallbackPath) {
+  if (primary.includes('data:image/svg+xml') && fallbackPath) {
     const fallback = getImageUrl(fallbackPath);
-    if (!fallback.includes('placeholder')) {
+    if (!fallback.includes('data:image/svg+xml')) {
       return fallback;
     }
   }
@@ -91,9 +111,11 @@ export const getSafeImageUrl = (
 };
 
 // Export all utilities
-export default {
+const imageUtils = {
   getImageUrl,
   getPlaceholderUrl,
   handleImageError,
   getSafeImageUrl,
 };
+
+export default imageUtils;
