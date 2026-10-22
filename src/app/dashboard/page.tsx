@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import apiClient, { isUnauthenticated } from '../../services/apiClient';
+import apiClient, { isUnauthenticated, getApiBaseUrl } from '../../services/apiClient';
 import { getAdminToken, clearAdminSession } from '../../lib/auth';
 
 interface RecentOrder {
@@ -26,6 +26,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +49,11 @@ export default function DashboardPage() {
         // client interceptor - nothing to report.
         if (!isUnauthenticated(err)) {
           console.error('Failed to fetch dashboard stats', err);
+          const e = err as { response?: { status?: number; data?: { message?: string } } };
+          // No response at all = the API is unreachable (server down, wrong URL or blocked by CORS)
+          setError(e.response
+            ? `The API returned HTTP ${e.response.status}${e.response.data?.message ? `: ${e.response.data.message}` : ''}.`
+            : `Cannot reach the API at ${getApiBaseUrl()}. Check that the backend is running and NEXT_PUBLIC_API_URL is correct.`);
         }
       } finally {
         setLoading(false);
@@ -65,14 +71,6 @@ export default function DashboardPage() {
       default: return 'bg-slate-100 text-slate-600';
     }
   };
-  console.log("stats : ", stats)
-  console.log("recentOrders : ", stats?.recentOrders)
-  console.log("total revenue : ", stats?.totalRevenue)
-  console.log("total orders : ", stats?.totalOrders)
-  console.log("total products : ", stats?.totalProducts)
-  console.log("total categories : ", stats?.totalCategories)
-  console.log("total banners : ", stats?.totalBanners)
-  console.log("total customers : ", stats?.totalCustomers)
   const cards = [
     {
       label: 'Total Revenue',
@@ -141,6 +139,11 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-[1200px] mx-auto mt-2 pb-12">
+      {error && (
+        <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <strong>Dashboard statistics could not be loaded.</strong> {error}
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
         {cards.map((card, idx) => (
           <div key={idx} className="bg-white rounded-[24px] p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center gap-6 border border-slate-100/60">

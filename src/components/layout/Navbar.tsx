@@ -12,6 +12,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   let title = 'Dashboard';
   if (pathname.includes('/products')) title = 'Products';
   else if (pathname.includes('/categories')) title = 'Categories';
+  else if (pathname.includes('/erp')) title = 'ERP Integration';
   else if (pathname.includes('/orders')) title = 'Orders';
   else if (pathname.includes('/banners')) title = 'Banners';
   else if (pathname.includes('/customers')) title = 'Customers';

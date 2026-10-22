@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from '../../../services/apiClient';
+import axios, { getBackendRoot } from '../../../services/apiClient';
 
 interface IBanner {
   _id: string;
@@ -212,7 +212,7 @@ export default function BannersPage() {
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] text-slate-500 font-semibold uppercase">Laptop</span>
                           <img
-                            src={banner.image && banner.image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.image}` : banner.image}
+                            src={banner.image && banner.image.startsWith('/') ? `${getBackendRoot()}${banner.image}` : banner.image}
                             alt={banner.title}
                             className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
                         </div>
@@ -220,7 +220,7 @@ export default function BannersPage() {
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] text-slate-500 font-semibold uppercase">Mobile</span>
                             <img
-                              src={banner.mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${banner.mobileImage}` : banner.mobileImage}
+                              src={banner.mobileImage.startsWith('/') ? `${getBackendRoot()}${banner.mobileImage}` : banner.mobileImage}
                               alt={`${banner.title} mobile`}
                               className="w-[40px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
 
@@ -319,7 +319,7 @@ export default function BannersPage() {
                     <div className="mt-4">
                       <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
                       <img
-                        src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${image}` : image)}
+                        src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${getBackendRoot()}${image}` : image)}
                         alt="Preview"
                         className="w-full h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm" />
 
@@ -352,7 +352,7 @@ export default function BannersPage() {
                     <div className="mt-4">
                       <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
                       <img
-                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api', '') || 'http://localhost:5000'}${mobileImage}` : mobileImage)}
+                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${getBackendRoot()}${mobileImage}` : mobileImage)}
                         alt="Mobile Preview"
                         className="w-[120px] h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
                       />
