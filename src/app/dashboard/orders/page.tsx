@@ -24,17 +24,24 @@ interface Order {
   user: {
     _id: string;
     name: string;
-    email: string;
+    email?: string; // absent in read-only production history
     phone?: string;
-  };
+  } | null;
   items: OrderItem[];
-  shippingAddress: {
-    street: string;
+  shippingAddress?: { // absent on store-pickup orders
+    street?: string; // absent in read-only production history
     city: string;
     state: string;
-    zipCode: string;
+    zipCode?: string; // absent in read-only production history
     country: string;
   };
+  // Absent on orders placed before checkout options existed (home delivery, no extra charges)
+  fulfillmentMethod?: 'delivery' | 'pickup';
+  shippingMethod?: 'land' | 'air';
+  pickupDetails?: { storeName?: string; address?: string; openingHours?: string; phone?: string };
+  pickupFee?: number;
+  specialPackagingFee?: number;
+  tax?: { enabled: boolean; pricesIncludeTax: boolean; taxableValue: number; taxAmount: number };
   subtotal: number;
   discount: number;
   shippingFee: number;
@@ -52,13 +59,20 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, orderId: string | null}>({ isOpen: false, orderId: null });
   const [deleting, setDeleting] = useState(false);
+  // 'history' = read-only production history (local development only); 'local' = this database
+  const [source, setSource] = useState<'history' | 'local'>('history');
+  const [historyEnabled, setHistoryEnabled] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const readOnly = source === 'history';
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(source);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   const handleAuthError = () => {
     localStorage.removeItem('adminToken');
@@ -68,15 +82,36 @@ export default function OrdersPage() {
     router.push('/login');
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (from: 'history' | 'local' = source) => {
     try {
+      setLoadError(false);
+      setHistoryError(null);
       setLoading(true);
+      setSelectedOrder(null);
+      if (from === 'history') {
+        const all: Order[] = [];
+        for (let page = 1; page <= 20; page++) {
+          const res = await axios.get('/dashboard/history/orders', { params: { page, limit: 100 } });
+          all.push(...res.data.data.orders);
+          if (page >= res.data.data.pagination.pages) break;
+        }
+        setOrders(all);
+        return;
+      }
       const res = await axios.get('/payments/admin/orders');
       if (res.data.success) {
         setOrders(res.data.data);
       }
     } catch (err: any) {
+      if (from === 'history' && err.response?.status === 404 && err.response?.data?.errors?.[0]?.code === 'HISTORY_DISABLED') {
+        setHistoryEnabled(false); // history not configured: this database is the only source
+        setSource('local');
+        return;
+      }
       console.error('Failed to fetch orders', err);
+      setLoadError(true);
+      setOrders([]);
+      if (from === 'history') setHistoryError(err.response?.data?.message || 'The read-only history request failed.');
       if (err.response?.status === 401) {
         handleAuthError();
       }
@@ -184,14 +219,23 @@ export default function OrdersPage() {
 
         {/* Left Column: Orders List */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
-          <div className="mb-8">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[16px] font-medium text-slate-800">All Orders</h2>
+            {historyEnabled && (
+              <div className="inline-flex rounded-[10px] border border-slate-200 p-1 text-[13px] font-semibold" role="group" aria-label="Order data source">
+                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
+                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
+              </div>
+            )}
           </div>
 
           {orders.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
-              <p className="text-lg font-medium">No orders yet</p>
-              <p className="text-sm mt-2">Orders will appear here once customers place them.</p>
+              <p className="text-lg font-medium">{loadError ? 'Could not load orders (the API request failed).' : 'No orders yet'}</p>
+              <p className="text-sm mt-2">{historyError || (loadError ? 'Check that the backend is running.' : 'Orders will appear here once customers place them.')}</p>
+              {loadError && (
+                <button onClick={() => fetchOrders(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -214,12 +258,15 @@ export default function OrdersPage() {
                       <td className="py-5 px-6">
                         <div className="flex flex-col">
                           <span className="font-bold text-[#111827] text-[14px] leading-tight mb-0.5">{order.user?.name || 'Unknown'}</span>
-                          <span className="text-slate-500 text-[13px]">{order.user?.email || ''}</span>
+                          <span className="text-slate-500 text-[13px]">{readOnly ? '' : order.user?.email || ''}</span>
                         </div>
                       </td>
                       <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
                       <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
                       <td className="py-5 px-4 sm:px-6">
+                        {readOnly ? (
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-[6px] text-[12px] sm:text-[13px] font-bold tracking-wide capitalize ${getStatusStyle(order.orderStatus)}`}>{order.orderStatus}</span>
+                        ) : (
                         <div className={`relative inline-flex items-center rounded-[6px] ${getStatusStyle(order.orderStatus)} ${updatingOrderId === order._id ? 'opacity-70 pointer-events-none' : ''}`}>
                           <select
                             value={order.orderStatus}
@@ -243,6 +290,7 @@ export default function OrdersPage() {
                             )}
                           </div>
                         </div>
+                        )}
                       </td>
                       <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{formatDate(order.createdAt)}</td>
                       <td className="py-5 px-6">
@@ -253,13 +301,13 @@ export default function OrdersPage() {
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                           </button>
-                          <button
+                          {!readOnly && <button
                             onClick={() => handleDeleteClick(order._id)}
                             className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                             title="Delete Order"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                          </button>
+                          </button>}
                         </div>
                       </td>
                     </tr>
@@ -316,20 +364,35 @@ export default function OrdersPage() {
                 <h3 className="text-[16px] font-bold text-[#111827] mb-3">Customer Information</h3>
                 <div className="space-y-2 text-[14px] text-slate-700 font-medium">
                   <p>Name: {activeOrder.user?.name || 'Unknown'}</p>
-                  <p>Email: {activeOrder.user?.email || 'N/A'}</p>
-                  {activeOrder.user?.phone && <p>Phone: {activeOrder.user.phone}</p>}
+                  <p>Email: {readOnly ? 'Hidden (production history)' : activeOrder.user?.email || 'N/A'}</p>
+                  {!readOnly && activeOrder.user?.phone && <p>Phone: {activeOrder.user.phone}</p>}
                 </div>
               </div>
 
-              {/* Shipping Address */}
+              {/* Fulfilment: store pickup or home delivery */}
+              {activeOrder.fulfillmentMethod === 'pickup' ? (
               <div>
-                <h3 className="text-[16px] font-bold text-[#111827] mb-3">Shipping Address</h3>
+                <h3 className="text-[16px] font-bold text-[#111827] mb-3">Store Pickup</h3>
+                <div className="space-y-1.5 text-[14px] text-slate-700 font-medium">
+                  <p>{activeOrder.pickupDetails?.storeName || 'Store'}</p>
+                  {activeOrder.pickupDetails?.address && <p>{activeOrder.pickupDetails.address}</p>}
+                  {activeOrder.pickupDetails?.openingHours && <p className="text-[13px] text-slate-500">{activeOrder.pickupDetails.openingHours}</p>}
+                </div>
+              </div>
+              ) : (
+              <div>
+                <h3 className="text-[16px] font-bold text-[#111827] mb-3">
+                  Shipping Address
+                  {activeOrder.shippingMethod && <span className="ml-2 text-[12px] font-semibold text-slate-500">({activeOrder.shippingMethod === 'air' ? 'Air' : 'Road'})</span>}
+                </h3>
                 <div className="space-y-1.5 text-[14px] text-slate-700 font-medium">
                   {activeOrder.shippingAddress?.street && <p>{activeOrder.shippingAddress.street}</p>}
                   <p>{activeOrder.shippingAddress?.city}{activeOrder.shippingAddress?.state ? `, ${activeOrder.shippingAddress.state}` : ''}</p>
-                  <p>{activeOrder.shippingAddress?.zipCode}{activeOrder.shippingAddress?.country ? `, ${activeOrder.shippingAddress.country}` : ''}</p>
+                  <p>{[activeOrder.shippingAddress?.zipCode, activeOrder.shippingAddress?.country].filter(Boolean).join(', ')}</p>
+                  {readOnly && <p className="text-[12px] text-slate-400">Street and PIN code hidden (production history)</p>}
                 </div>
               </div>
+              )}
 
               {/* Order Items */}
               <div>
@@ -377,7 +440,17 @@ export default function OrdersPage() {
                   {activeOrder.discount > 0 && (
                     <div className="flex justify-between text-green-600"><span>Discount:</span><span>-₹{activeOrder.discount}</span></div>
                   )}
-                  <div className="flex justify-between"><span>Shipping:</span><span>{activeOrder.shippingFee > 0 ? `₹${activeOrder.shippingFee}` : 'Free'}</span></div>
+                  {activeOrder.fulfillmentMethod === 'pickup' ? (
+                    <div className="flex justify-between"><span>Store pickup:</span><span>{(activeOrder.pickupFee ?? 0) > 0 ? `₹${activeOrder.pickupFee}` : 'Free'}</span></div>
+                  ) : (
+                    <div className="flex justify-between"><span>Shipping:</span><span>{activeOrder.shippingFee > 0 ? `₹${activeOrder.shippingFee}` : 'Free'}</span></div>
+                  )}
+                  {(activeOrder.specialPackagingFee ?? 0) > 0 && (
+                    <div className="flex justify-between"><span>Special packaging:</span><span>₹{activeOrder.specialPackagingFee}</span></div>
+                  )}
+                  {activeOrder.tax?.enabled && (
+                    <div className="flex justify-between text-slate-500"><span>GST {activeOrder.tax.pricesIncludeTax ? '(included)' : '(added)'}:</span><span>₹{activeOrder.tax.taxAmount}</span></div>
+                  )}
                 </div>
               </div>
 

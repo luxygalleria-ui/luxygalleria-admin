@@ -45,6 +45,7 @@ export default function BrandsPage() {
   const [isAddBrandOpen, setIsAddBrandOpen] = useState(false);
   const [brands, setBrands] = useState<IBrand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, brandId: string | null}>({ isOpen: false, brandId: null });
@@ -62,6 +63,7 @@ export default function BrandsPage() {
   // Fetch Brands
   const fetchBrands = async () => {
     try {
+      setLoadError(false);
       const res = await axios.get(`/brands`);
       const data = res.data;
       if (data.success) {
@@ -69,6 +71,7 @@ export default function BrandsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch brands', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -233,7 +236,7 @@ export default function BrandsPage() {
                 {loading ? (
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">Loading brands...</td></tr>
                 ) : brands.length === 0 ? (
-                  <tr><td colSpan={5} className="py-8 text-center text-slate-500">No brands found. Add your first brand!</td></tr>
+                  <tr><td colSpan={5} className="py-8 text-center text-slate-500">{loadError ? 'Could not load brands (the API request failed). Reload to try again.' : 'No brands found. Add your first brand!'}</td></tr>
                 ) : brands.map((brand) => (
                   <tr key={brand._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
@@ -276,7 +279,7 @@ export default function BrandsPage() {
             {loading ? (
               <div className="py-8 text-center text-slate-500">Loading brands...</div>
             ) : brands.length === 0 ? (
-              <div className="py-8 text-center text-slate-500">No brands found. Add your first brand!</div>
+              <div className="py-8 text-center text-slate-500">{loadError ? 'Could not load brands (the API request failed). Reload to try again.' : 'No brands found. Add your first brand!'}</div>
             ) : (
               brands.map((brand) => (
                 <div key={brand._id} className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5 flex items-center justify-between gap-3">

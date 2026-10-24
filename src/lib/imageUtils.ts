@@ -3,6 +3,14 @@
  * Handles image URL construction with proper backend path resolution
  */
 
+// ponytail: the Cloudinary cloud was renamed dlysz5wmo -> luxygalleria-staging; every catalogue asset was verified under the
+// new name (23 Oct 2026). Stored URLs are fixed by `npm run migrate:cloudinary-cloud` (luxy-backend); this keeps references
+// it does not touch (order history, avatars, saved carts) loading. Remove once nothing stores the old name.
+const OLD_CLOUDINARY_PREFIX = /^(https?:\/\/res\.cloudinary\.com\/)dlysz5wmo\//;
+
+/** Rewrites only the exact old Cloudinary cloud prefix; path, version, transformations and query string are unchanged. */
+export const fixCloudinaryCloud = (url: string): string => url.replace(OLD_CLOUDINARY_PREFIX, '$1luxygalleria-staging/');
+
 /**
  * Get full image URL from backend path or remote URL
  * @param imagePath - Image path or URL from API (e.g., "/uploads/image.jpg" or "https://...")
@@ -16,7 +24,7 @@ export const getImageUrl = (imagePath: string | undefined | null): string => {
 
   // Already a full URL (http/https)
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+    return fixCloudinaryCloud(imagePath);
   }
 
   // Backend uploads path
@@ -36,6 +44,11 @@ export const getImageUrl = (imagePath: string | undefined | null): string => {
   // Other root-relative paths are local public assets (e.g. /luxy_logo.png)
   if (imagePath.startsWith('/')) {
     return imagePath;
+  }
+
+  // Relative asset paths missing leading slash
+  if (/^(products|images|social|uploads)\//i.test(imagePath)) {
+    return getImageUrl(`/${imagePath}`);
   }
 
   // Fallback to placeholder for unrecognized formats
@@ -79,6 +92,9 @@ export const handleImageError = (
   if (img.src === fallback || img.src.startsWith('data:image/svg+xml')) {
     return;
   }
+
+  // Development only: name the image that failed, so the fallback never hides a broken URL (image URLs are public)
+  if (process.env.NODE_ENV !== 'production') console.warn(`[image] failed to load: ${img.src}`);
 
   // Remove srcset/sizes so Next Image or responsive browsers don't re-query failed sources
   img.removeAttribute('srcset');

@@ -62,6 +62,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [dbCategories, setDbCategories] = useState<{_id: string, name: string, status: string}[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, productId: string | null}>({ isOpen: false, productId: null });
@@ -89,6 +90,7 @@ export default function ProductsPage() {
   // Fetch Products
   const fetchProducts = async () => {
     try {
+      setLoadError(false);
       const res = await axios.get(`/products`);
       const data = res.data;
       if (data.success) {
@@ -96,6 +98,7 @@ export default function ProductsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch products', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -477,7 +480,7 @@ export default function ProductsPage() {
                 {loading ? (
                   <tr><td colSpan={7} className="py-8 text-center text-slate-500">Loading products...</td></tr>
                 ) : products.length === 0 ? (
-                  <tr><td colSpan={7} className="py-8 text-center text-slate-500">No products found. Add your first product!</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-slate-500">{loadError ? 'Could not load products (the API request failed). Reload to try again.' : 'No products found. Add your first product!'}</td></tr>
                 ) : products.map((product) => {
                   return (
                   <tr key={product._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">

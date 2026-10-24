@@ -20,6 +20,7 @@ export default function VideoTestimonialsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; testimonialId: string | null }>({ isOpen: false, testimonialId: null });
@@ -41,10 +42,13 @@ export default function VideoTestimonialsPage() {
       const data = res.data;
       if (data.success) {
         setTestimonials(data.data);
+        setLoadError('');
       }
     } catch (err) {
       console.error('Failed to fetch video testimonials', err);
-      toast.error('Failed to load video testimonials');
+      // Shown in place of the list: an error must not look like "no testimonials yet"
+      const res = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+      setLoadError(res?.data?.message || (res?.status ? `Server error (HTTP ${res.status})` : 'Could not reach the server'));
     } finally {
       setLoading(false);
     }
@@ -299,6 +303,12 @@ export default function VideoTestimonialsPage() {
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-[#8B5E34]"></div>
                       <span>Loading video testimonials...</span>
                     </div>
+                  </td></tr>
+                ) : loadError ? (
+                  <tr><td colSpan={6} className="py-10 text-center bg-red-50" role="alert">
+                    <p className="text-red-700 font-semibold">Video testimonials could not be loaded</p>
+                    <p className="text-red-600 text-sm mt-1">{loadError}</p>
+                    <button onClick={() => { setLoading(true); fetchTestimonials(); }} className="mt-3 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Retry</button>
                   </td></tr>
                 ) : testimonials.length === 0 ? (
                   <tr><td colSpan={6} className="py-12 text-center text-slate-500">

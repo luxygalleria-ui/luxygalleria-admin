@@ -6,15 +6,22 @@ import axios from '../../../services/apiClient';
 interface Customer {
   _id: string;
   name: string;
-  email: string;
+  email?: string; // absent in read-only production history
   phone?: string;
   isActive: boolean;
   createdAt: string;
+  orderCount?: number; // read-only production history only
 }
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
+  // 'history' = read-only production history (local development only); 'local' = this database
+  const [source, setSource] = useState<'history' | 'local'>('history');
+  const [historyEnabled, setHistoryEnabled] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const readOnly = source === 'history';
 
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
@@ -25,18 +32,40 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    fetchCustomers(source);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (from: 'history' | 'local' = source) => {
     try {
+      setLoadError(false);
+      setHistoryError(null);
       setLoading(true);
+      if (from === 'history') {
+        const all: Customer[] = [];
+        for (let page = 1; page <= 20; page++) {
+          const res = await axios.get('/dashboard/history/customers', { ...getAuthHeaders(), params: { page, limit: 100 } });
+          all.push(...res.data.data.customers);
+          if (page >= res.data.data.pagination.pages) break;
+        }
+        setCustomers(all);
+        return;
+      }
       const res = await axios.get(`/users/admin/customers`, getAuthHeaders());
       if (res.data.success) {
         setCustomers(res.data.data);
       }
-    } catch (err) {
+    } catch (caught) {
+      const err = caught as { response?: { status?: number; data?: { message?: string; errors?: { code?: string }[] } } };
+      if (from === 'history' && err.response?.status === 404 && err.response?.data?.errors?.[0]?.code === 'HISTORY_DISABLED') {
+        setHistoryEnabled(false); // history not configured: this database is the only source
+        setSource('local');
+        return;
+      }
       console.error('Failed to fetch customers', err);
+      setLoadError(true);
+      setCustomers([]);
+      if (from === 'history') setHistoryError(err.response?.data?.message || 'The read-only history request failed.');
     } finally {
       setLoading(false);
     }
@@ -91,15 +120,26 @@ export default function CustomersPage() {
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 transition-all duration-300">
         
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <h2 className="text-[16px] font-medium text-slate-800">Customer Management</h2>
-          <span className="text-[13px] text-slate-500 font-medium">{customers.length} customers</span>
+          <div className="flex flex-wrap items-center gap-3">
+            {historyEnabled && (
+              <div className="inline-flex rounded-[10px] border border-slate-200 p-1 text-[13px] font-semibold" role="group" aria-label="Customer data source">
+                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
+                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
+              </div>
+            )}
+            <span className="text-[13px] text-slate-500 font-medium">{customers.length} customers</span>
+          </div>
         </div>
         
         {customers.length === 0 ? (
           <div className="text-center py-16 text-slate-500">
-            <p className="text-lg font-medium">No customers yet</p>
-            <p className="text-sm mt-2">Customers will appear here once they register.</p>
+            <p className="text-lg font-medium">{loadError ? 'Could not load customers (the API request failed).' : 'No customers yet'}</p>
+            <p className="text-sm mt-2">{historyError || (loadError ? 'Check that the backend is running.' : 'Customers will appear here once they register.')}</p>
+            {loadError && (
+              <button onClick={() => fetchCustomers(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -118,15 +158,16 @@ export default function CustomersPage() {
                 {customers.map((customer) => (
                   <tr key={customer._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{customer.name}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{customer.email}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{customer.phone || '—'}</td>
-                    <td className="py-5 px-6 text-[14px] text-slate-500 font-medium">{new Date(customer.createdAt).toLocaleDateString()}</td>
+                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden · {customer.orderCount ?? 0} orders</span> : customer.email}</td>
+                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden</span> : customer.phone || '—'}</td>
+                    <td className="py-5 px-6 text-[14px] text-slate-500 font-medium">{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '—'}</td>
                     <td className="py-5 px-6">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${getStatusStyle(customer.isActive)}`}>
                         {customer.isActive ? 'ACTIVE' : 'BLOCKED'}
                       </span>
                     </td>
                     <td className="py-5 px-6">
+                      {readOnly ? <span className="text-[13px] text-slate-400 font-medium">Read-only</span> : (
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => toggleCustomerStatus(customer._id)}
@@ -151,6 +192,7 @@ export default function CustomersPage() {
                           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}

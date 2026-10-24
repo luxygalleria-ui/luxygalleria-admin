@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios, { getBackendRoot } from '../../../services/apiClient';
+import axios from '../../../services/apiClient';
+import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 
 interface IBanner {
   _id: string;
@@ -18,6 +19,7 @@ export default function BannersPage() {
   const [isAddBannerOpen, setIsAddBannerOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, bannerId: string | null }>({ isOpen: false, bannerId: null });
@@ -32,6 +34,7 @@ export default function BannersPage() {
 
   const fetchBanners = async () => {
     try {
+      setLoadError(false);
       const res = await axios.get(`/banners`);
       const data = res.data;
       if (data.success) {
@@ -39,6 +42,7 @@ export default function BannersPage() {
       }
     } catch (err) {
       console.error('Failed to fetch banners', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -204,7 +208,7 @@ export default function BannersPage() {
                 {loading ? (
                   <tr><td colSpan={4} className="py-8 text-center text-slate-500">Loading banners...</td></tr>
                 ) : banners.length === 0 ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">No banners found. Add your first banner!</td></tr>
+                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">{loadError ? 'Could not load banners (the API request failed). Reload to try again.' : 'No banners found. Add your first banner!'}</td></tr>
                 ) : banners.map((banner) => (
                   <tr key={banner._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
@@ -212,16 +216,18 @@ export default function BannersPage() {
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] text-slate-500 font-semibold uppercase">Laptop</span>
                           <img
-                            src={banner.image && banner.image.startsWith('/') ? `${getBackendRoot()}${banner.image}` : banner.image}
-                            alt={banner.title}
+                            src={getImageUrl(banner.image)}
+                            alt={`${banner.title || 'Banner'} (laptop)`}
+                            onError={handleImageError}
                             className="w-[120px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
                         </div>
                         {banner.mobileImage && (
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] text-slate-500 font-semibold uppercase">Mobile</span>
                             <img
-                              src={banner.mobileImage.startsWith('/') ? `${getBackendRoot()}${banner.mobileImage}` : banner.mobileImage}
-                              alt={`${banner.title} mobile`}
+                              src={getImageUrl(banner.mobileImage)}
+                              alt={`${banner.title || 'Banner'} (mobile)`}
+                              onError={handleImageError}
                               className="w-[40px] h-[60px] rounded-[8px] object-cover bg-slate-100 shadow-sm border border-slate-200" />
 
                           </div>
@@ -319,7 +325,8 @@ export default function BannersPage() {
                     <div className="mt-4">
                       <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
                       <img
-                        src={imageFile ? URL.createObjectURL(imageFile) : (image.startsWith('/') ? `${getBackendRoot()}${image}` : image)}
+                        src={imageFile ? URL.createObjectURL(imageFile) : getImageUrl(image)}
+                        onError={handleImageError}
                         alt="Preview"
                         className="w-full h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm" />
 
@@ -352,7 +359,8 @@ export default function BannersPage() {
                     <div className="mt-4">
                       <p className="text-[12px] font-semibold text-slate-500 mb-2">Image Preview</p>
                       <img
-                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : (mobileImage.startsWith('/') ? `${getBackendRoot()}${mobileImage}` : mobileImage)}
+                        src={mobileImageFile ? URL.createObjectURL(mobileImageFile) : getImageUrl(mobileImage)}
+                        onError={handleImageError}
                         alt="Mobile Preview"
                         className="w-[120px] h-[120px] rounded-lg object-cover border border-slate-200 shadow-sm"
                       />

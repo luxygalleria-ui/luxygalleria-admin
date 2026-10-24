@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import axios, { isUnauthenticated } from '../../../services/apiClient';
 import { Mail, Phone, Calendar, Check, Trash2, Search, Archive, RotateCcw } from 'lucide-react';
@@ -22,6 +22,10 @@ export default function ContactsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; contactId: string | null }>({ isOpen: false, contactId: null });
   const [deleting, setDeleting] = useState(false);
+  // Totals per status across all messages (from the server), and a load failure shown instead of "no messages"
+  const [counts, setCounts] = useState<Record<'ALL' | ContactStatus, number> | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Debounce the search box so typing does not fire a request per keystroke.
   useEffect(() => {
@@ -42,12 +46,16 @@ export default function ContactsPage() {
         const res = await axios.get('/contacts', { params });
         if (!cancelled) {
           setContacts(normalizeContacts(res.data?.data));
+          setCounts(res.data?.counts ?? null);
+          setLoadError('');
         }
       } catch (err) {
         if (cancelled || isUnauthenticated(err)) return;
         console.error('Failed to fetch contacts', err);
         setContacts([]);
-        toast.error('Failed to load messages');
+        setCounts(null);
+        const status = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+        setLoadError(status?.data?.message || (status?.status ? `Server error (HTTP ${status.status})` : 'Could not reach the server'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,12 +63,10 @@ export default function ContactsPage() {
 
     fetchContacts();
     return () => { cancelled = true; };
-  }, [statusFilter, debouncedSearch]);
+  }, [statusFilter, debouncedSearch, reloadKey]);
 
-  const unreadCount = useMemo(
-    () => contacts.filter((c) => c.status === 'NEW').length,
-    [contacts]
-  );
+  const unreadCount = counts?.NEW ?? 0;
+  const reload = () => setReloadKey((k) => k + 1);
 
   const setStatus = async (id: string, status: ContactStatus) => {
     const previous = contacts;
@@ -69,6 +75,7 @@ export default function ContactsPage() {
     try {
       await axios.put(`/contacts/${id}/status`, { status });
       toast.success(status === 'RESOLVED' ? 'Marked as resolved' : status === 'READ' ? 'Marked as read' : 'Marked as unread');
+      reload(); // refresh totals, and drop the row if it no longer matches the current filter
     } catch (err) {
       if (isUnauthenticated(err)) return;
       console.error(err);
@@ -86,6 +93,7 @@ export default function ContactsPage() {
         toast.success('Message deleted');
         setContacts((cs) => cs.filter((c) => c._id !== deleteModal.contactId));
         setDeleteModal({ isOpen: false, contactId: null });
+        reload();
       }
     } catch (err) {
       if (isUnauthenticated(err)) return;
@@ -130,7 +138,7 @@ export default function ContactsPage() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {f.label}
+                {f.label}{counts ? ` (${counts[f.key] ?? 0})` : ''}
               </button>
             ))}
           </div>
@@ -151,6 +159,12 @@ export default function ContactsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full py-12 text-center text-slate-500 font-medium">Loading messages...</div>
+          ) : loadError ? (
+            <div className="col-span-full py-10 px-6 text-center bg-red-50 rounded-2xl border border-red-200" role="alert">
+              <p className="text-red-700 font-semibold">Messages could not be loaded</p>
+              <p className="text-red-600 text-sm mt-1">{loadError}</p>
+              <button onClick={reload} className="mt-4 px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Retry</button>
+            </div>
           ) : contacts.length === 0 ? (
             <div className="col-span-full py-12 text-center text-slate-500 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               {debouncedSearch || statusFilter !== 'ALL'

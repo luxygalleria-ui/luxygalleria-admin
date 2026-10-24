@@ -43,6 +43,7 @@ export default function CategoriesPage() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, categoryId: string | null}>({ isOpen: false, categoryId: null });
@@ -59,6 +60,7 @@ export default function CategoriesPage() {
   // Fetch Categories
   const fetchCategories = async () => {
     try {
+      setLoadError(false);
       const res = await axios.get(`/categories`);
       const data = res.data;
       if (data.success) {
@@ -66,6 +68,7 @@ export default function CategoriesPage() {
       }
     } catch (err) {
       console.error('Failed to fetch categories', err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -90,7 +93,7 @@ export default function CategoriesPage() {
     setEditingId(category._id);
     setName(category.name);
     
-    setImage(getImageUrl(category.image) || '');
+    setImage(category.image || '');
     
     setImageFile(null);
     setPreviewUrl('');
@@ -223,7 +226,7 @@ export default function CategoriesPage() {
                 {loading ? (
                   <tr><td colSpan={4} className="py-8 text-center text-slate-500">Loading categories...</td></tr>
                 ) : categories.length === 0 ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">No categories found. Add your first category!</td></tr>
+                  <tr><td colSpan={4} className="py-8 text-center text-slate-500">{loadError ? 'Could not load categories (the API request failed). Reload to try again.' : 'No categories found. Add your first category!'}</td></tr>
                 ) : categories.map((category) => (
                   <tr key={category._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
@@ -264,7 +267,7 @@ export default function CategoriesPage() {
             {loading ? (
               <div className="py-8 text-center text-slate-500">Loading categories...</div>
             ) : categories.length === 0 ? (
-              <div className="py-8 text-center text-slate-500">No categories found. Add your first category!</div>
+              <div className="py-8 text-center text-slate-500">{loadError ? 'Could not load categories (the API request failed). Reload to try again.' : 'No categories found. Add your first category!'}</div>
             ) : (
               categories.map((category) => (
                 <div key={category._id} className="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5 flex items-center justify-between gap-3">
@@ -350,7 +353,7 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-6">
                   <div className="w-[80px] h-[80px] rounded-[16px] border border-slate-200 overflow-hidden shrink-0 bg-slate-50 flex items-center justify-center">
                     {(previewUrl || image) ? (
-                      <img src={previewUrl || image} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={previewUrl || getImageUrl(image)} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                     )}

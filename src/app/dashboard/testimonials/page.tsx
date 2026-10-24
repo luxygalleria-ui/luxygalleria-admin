@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
+import { getImageUrl } from '../../../lib/imageUtils';
 
 interface ITestimonial {
   _id: string;
@@ -215,7 +216,7 @@ export default function TestimonialsPage() {
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
                         {testimonial.imageUrl ? (
-                          <img src={testimonial.imageUrl} alt={testimonial.clientName} className="w-[40px] h-[40px] rounded-full object-cover shrink-0" />
+                          <img src={getImageUrl(testimonial.imageUrl)} alt={testimonial.clientName} className="w-[40px] h-[40px] rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center text-white font-bold text-[16px] shrink-0 bg-[#3b82f6]">
                             {testimonial.clientName.charAt(0).toUpperCase()}
