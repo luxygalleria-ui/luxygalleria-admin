@@ -54,6 +54,11 @@ export default function ShippingSettingsPage() {
               <Card key={z.key} title={`Delivery: ${z.name}`} description={z.hint}
                 right={<Toggle checked={zone.enabled} onChange={(v) => set(['zones', z.key, 'enabled'], v)} label="Deliver here" />}>
                 <div className={`space-y-5 ${zone.enabled ? '' : 'opacity-60'}`}>
+                  {(err(`zones.${z.key}.enabled`) || (zone.enabled && !zone.land.enabled && !zone.air.enabled)) && (
+                    <p className="text-sm text-red-600" role="alert">
+                      {err(`zones.${z.key}.enabled`) || `Delivery to ${z.name} is on, but neither Road nor Air is enabled: customers there cannot place an order.`}
+                    </p>
+                  )}
                   <Field label="Customer note (optional)" hint="Shown at checkout, e.g. service limits." error={err(`zones.${z.key}.note`)}>
                     <TextInput value={zone.note} onChange={(v) => set(['zones', z.key, 'note'], v)} placeholder="e.g. Remote PIN codes may take 2 extra days" />
                   </Field>
