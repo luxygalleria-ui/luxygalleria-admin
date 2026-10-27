@@ -109,7 +109,8 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
     const priced = { price: p, offerPrice: p, oldPrice: p, actualPrice: p, stock: Number(stock) };
     // ponytail: price/stock edit only the first variant; edit other sizes on the Products page
     const variants = editing?.variants?.length
-      ? editing.variants.map((v, i) => (i === 0 ? { ...v, ...priced } : v))
+      // originalStock: the backend applies a stock change only if stock is still what this form showed
+      ? editing.variants.map((v, i) => (i === 0 ? { ...v, ...priced, originalStock: v.stock ?? 0 } : v))
       : [{ size: 'Standard', volume: 'Standard', flavor: 'Default', weight: 0, ...priced }];
     formData.append('variants', JSON.stringify(variants));
     if (!editing) formData.append(collectionFlag, 'true');

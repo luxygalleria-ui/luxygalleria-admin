@@ -32,8 +32,12 @@ interface IVariant {
   actualPrice?: number;
   weight?: number;
   stock?: number;
+  /** Stock when the form was opened; a different `stock` is sent as an explicit adjustment (refused if it moved since). */
+  originalStock?: number;
   image?: string;
   sku?: string;
+  /** Saved SKUs are ERP item codes: shown read-only, never changed from here. */
+  skuLocked?: boolean;
   description?: string;
   name?: string;
 }
@@ -79,7 +83,6 @@ export default function ProductsPage() {
   const [offerText, setOfferText] = useState('');
   const [keyFeatures, setKeyFeatures] = useState('');
   const [showOnLandingPage, setShowOnLandingPage] = useState(false);
-  const [stock, setStock] = useState<number>(0);
   const [weight, setWeight] = useState<number>(0);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -150,7 +153,6 @@ export default function ProductsPage() {
     setOfferText('');
     setKeyFeatures('');
     setShowOnLandingPage(false);
-    setStock(0);
     setWeight(0);
     setExistingImages([]);
     setImageFiles([]);
@@ -169,7 +171,6 @@ export default function ProductsPage() {
     setOfferText(product.offerText || '');
     setKeyFeatures(product.keyFeatures || '');
     setShowOnLandingPage(product.showOnLandingPage || false);
-    setStock(product.stock || 0);
     setWeight(product.weight || 0);
     
     setExistingImages(product.images || []);
@@ -185,8 +186,10 @@ export default function ProductsPage() {
       oldPrice: v.actualPrice || v.oldPrice || 0,
       weight: v.weight || 0,
       stock: v.stock || 0,
+      originalStock: v.stock || 0,
       image: v.image || '',
-      sku: v.sku || '',
+      sku: (v.sku || '').trim(),
+      skuLocked: !!(v.sku || '').trim(), // a spaces-only legacy value is no SKU: the admin may still enter one
       description: v.description || '',
       name: v.name || ''
     })));
@@ -305,6 +308,8 @@ export default function ProductsPage() {
       if (v.oldPrice && v.oldPrice > 0 && v.oldPrice < v.price) {
         return toast.error(`Variant ${i + 1}: Actual Price (₹${v.oldPrice}) cannot be less than Offer Price (₹${v.price}).`);
       }
+      if (!Number.isInteger(Number(v.stock || 0)) || Number(v.stock || 0) < 0) return toast.error(`Variant ${i + 1}: Stock must be a whole number, 0 or more.`);
+      if ((v.sku || '').trim().length > 64) return toast.error(`Variant ${i + 1}: SKU must be at most 64 characters.`);
 
       const sizeVal = (v.size || v.volume || '').trim().toLowerCase();
       const flavorVal = (v.flavor || 'Default').trim().toLowerCase();
@@ -346,8 +351,9 @@ export default function ProductsPage() {
         oldPrice: actualPrice,
         weight,
         stock: stockVal,
+        originalStock: v.originalStock,
         image: v.image || '',
-        sku: v.sku || '',
+        sku: (v.sku || '').trim(),
         description: v.description || '',
         name: v.name || ''
       };
@@ -358,10 +364,6 @@ export default function ProductsPage() {
     formData.append('showOnLandingPage', String(showOnLandingPage));
     // isGifting / isNewArrival are intentionally not sent: they are owned by the Gifting and New Arrivals pages,
     // and sending them here would reset them on every edit
-    
-    // Sum stock across variants
-    const totalStock = variantsWithWeight.reduce((acc, curr) => acc + curr.stock, 0);
-    formData.append('stock', String(totalStock));
     
     // Set global weight in formData based on the first variant's weight
     if (variantsWithWeight.length > 0) {
@@ -405,7 +407,8 @@ export default function ProductsPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error connecting to backend');
+      // Server refusals (stock changed, SKU locked or in use, variant in an order) carry a message for the admin
+      toast.error((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error connecting to backend');
     } finally {
       setSaving(false);
     }
@@ -433,7 +436,8 @@ export default function ProductsPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error deleting product');
+      // Server refusals (stock changed, SKU locked or in use, variant in an order) carry a message for the admin
+      toast.error((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error deleting product');
     } finally {
       setDeleting(false);
     }
@@ -697,10 +701,14 @@ export default function ProductsPage() {
                           {/* 7. Stock */}
                           <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Stock</label>
-                            <input type="number" placeholder="Stock quantity" value={v.stock === undefined || v.stock === 0 ? '' : v.stock} onChange={(e) => handleVariantChange(i, 'stock', Number(e.target.value))} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
+                            <input type="number" min="0" step="1" placeholder="Stock quantity" value={v.stock === undefined || v.stock === 0 ? '' : v.stock} onChange={(e) => handleVariantChange(i, 'stock', Number(e.target.value))} className="w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all bg-white" />
                           </div>
 
-
+                          {/* 8. SKU / ERP item code */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">SKU / Item Code</label>
+                            <input type="text" maxLength={64} placeholder="ERP item code" value={v.sku || ''} readOnly={v.skuLocked} title={v.skuLocked ? 'Saved SKUs are ERP item codes and cannot be changed here' : undefined} onChange={(e) => handleVariantChange(i, 'sku', e.target.value)} className={`w-full h-[40px] px-3 rounded-[8px] border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-[13px] transition-all ${v.skuLocked ? 'bg-slate-100 text-slate-500' : 'bg-white'}`} />
+                          </div>
 
                           {/* 9. Variant Description */}
                           <div>
@@ -800,14 +808,6 @@ export default function ProductsPage() {
               <div>
                 <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Description</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full h-[120px] p-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-[15px]"></textarea>
-              </div>
-
-              {/* Stock */}
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-[14px] font-bold text-slate-900 mb-2.5">Stock</label>
-                  <input type="number" min="0" value={stock} onChange={e => setStock(Number(e.target.value))} className="w-full h-[50px] px-4 rounded-[12px] border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[15px]" />
-                </div>
               </div>
 
               {/* Offer Text & Key Features */}
