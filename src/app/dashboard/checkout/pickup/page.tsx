@@ -20,7 +20,7 @@ export default function PickupSettingsPage() {
 
   return (
     <div className="space-y-5">
-      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} isDefault={s.isDefault}
+      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} warnings={s.warnings} isDefault={s.isDefault}
         defaultNote="Not saved yet: store pickup is off. Fill in the store details and enable it to offer in-store collection at checkout." />
       {draft && !s.loading && (
         <>

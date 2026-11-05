@@ -19,6 +19,9 @@ interface OrderItem {
   size?: string;
 }
 
+/** Stored payment status -> label. "completed" is set only by server-side Razorpay verification (or the webhook). */
+const PAYMENT_LABEL: Record<string, string> = { pending: 'Pending', completed: 'Paid', failed: 'Failed', refunded: 'Refunded' };
+
 interface Order {
   _id: string;
   user: {
@@ -55,6 +58,7 @@ interface Order {
   erpOrderId?: string;
   statusCorrections?: { at: string; by: string; from: string; to: string; reason: string }[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 // Same rule as the backend (luxy-backend/src/utils/orderStatus.ts): forward only; delivered and cancelled are final
@@ -72,7 +76,8 @@ export default function OrdersPage() {
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, orderId: string | null}>({ isOpen: false, orderId: null });
   const [deleting, setDeleting] = useState(false);
   // 'history' = read-only production history (local development only); 'local' = this database
-  const [source, setSource] = useState<'history' | 'local'>('history');
+  // This database first: it holds the orders admins act on (and new checkouts); production history is a read-only view
+  const [source, setSource] = useState<'history' | 'local'>('local');
   const [historyEnabled, setHistoryEnabled] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const readOnly = source === 'history';
@@ -123,7 +128,8 @@ export default function OrdersPage() {
         setSource('local');
         return;
       }
-      console.error('Failed to fetch orders', err);
+      // Handled below (message + Retry on the page); warn, so the dev overlay does not present it as a crash
+      console.warn(`Failed to fetch orders (${from}): HTTP ${err.response?.status ?? 'no response'}`, err.response?.data?.message || err.message);
       setLoadError(true);
       setOrders([]);
       if (from === 'history') setHistoryError(err.response?.data?.message || 'The read-only history request failed.');
@@ -379,15 +385,17 @@ export default function OrdersPage() {
                     </span>
                   </div>
                   <p>Date: {formatFullDate(activeOrder.createdAt)}</p>
+                  {activeOrder.updatedAt && <p>Updated: {formatFullDate(activeOrder.updatedAt)}</p>}
                   <p>Payment: {activeOrder.paymentMethod}</p>
                   <div className="flex items-center gap-2">
                     <span>Payment Status:</span>
                     <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${activeOrder.paymentStatus === 'completed' ? 'bg-[#dcfce7] text-[#16a34a]' : 'bg-[#fef3c7] text-[#d97706]'
                       }`}>
-                      {activeOrder.paymentStatus}
+                      {PAYMENT_LABEL[activeOrder.paymentStatus] ?? activeOrder.paymentStatus}
                     </span>
                   </div>
-                  {activeOrder.razorpayOrderId && <p>Razorpay ID: {activeOrder.razorpayOrderId}</p>}
+                  {activeOrder.razorpayOrderId && <p>Razorpay order ID: {activeOrder.razorpayOrderId}</p>}
+                  {activeOrder.razorpayPaymentId && <p>Razorpay payment ID: {activeOrder.razorpayPaymentId}</p>}
                   {activeOrder.trackingNumber && <p>Tracking Number: {activeOrder.trackingNumber}</p>}
                   {activeOrder.erpOrderId && <p>ERP Order ID: {activeOrder.erpOrderId}</p>}
                 </div>
