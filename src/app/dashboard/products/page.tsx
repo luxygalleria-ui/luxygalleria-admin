@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
@@ -57,6 +57,7 @@ interface IProduct {
   showOnLandingPage?: boolean;
   isGifting?: boolean;
   isNewArrival?: boolean;
+  brandId?: { _id?: string; name?: string } | null;
   stock?: number;
   weight?: number;
 }
@@ -89,6 +90,14 @@ export default function ProductsPage() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [variants, setVariants] = useState<IVariant[]>([{ volume: '50ml', size: '50ml', flavor: 'Default', price: 0, oldPrice: 0, weight: 0, stock: 0, image: '', sku: '', description: '', name: '' }]);
   const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Below xl the form stacks under the catalog: bring it into view, or Add/Edit seem to do nothing on a phone.
+  useEffect(() => {
+    if (isAddProductOpen && !window.matchMedia('(min-width: 1280px)').matches) {
+      formRef.current?.scrollIntoView({ block: 'start' });
+    }
+  }, [isAddProductOpen, editingId]);
 
   // Fetch Products
   const fetchProducts = async () => {
@@ -443,18 +452,45 @@ export default function ProductsPage() {
     }
   };
 
+  // Shared by the desktop table and the mobile cards.
+  const thumbSrc = (p: IProduct) => getImageUrl(p.images?.[0] || p.variants?.find((v) => v.image)?.image || '');
+  const weightOf = (p: IProduct) => {
+    const parsed = p.variants?.[0]?.volume ? parseWeightFromVolume(p.variants[0].volume) : null;
+    if ((p.weight === undefined || p.weight === 0 || p.weight > 10) && parsed !== null) return parsed;
+    return p.weight || 0;
+  };
+  const actions = (product: IProduct) => (
+    <>
+      <button
+        onClick={() => handleEdit(product)}
+        aria-label={`Edit ${product.name}`}
+        className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      </button>
+      <button onClick={() => handleDeleteClick(product._id)} aria-label={`Delete ${product.name}`} className="w-[38px] h-[38px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+      </button>
+    </>
+  );
+  const statusMessage = loading
+    ? 'Loading products...'
+    : products.length === 0
+      ? (loadError ? 'Could not load products (the API request failed). Reload to try again.' : 'No products found. Add your first product!')
+      : null;
+
   return (
     <div className="max-w-[1600px] mx-auto mt-2 pb-12">
       <div className="flex flex-col xl:flex-row gap-6 items-start">
-        
+
         {/* Left Column: Product Catalog */}
-        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300 xl:max-h-[calc(100vh-140px)] overflow-y-auto">
-          <div className="flex items-center justify-between mb-8">
+        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300 xl:max-h-[calc(100vh-140px)] overflow-y-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
             <h2 className="text-[18px] font-semibold text-slate-800">Product Catalog</h2>
             {!isAddProductOpen ? (
-              <button 
+              <button
                 onClick={openAddForm}
-                className="bg-[#3b60f6] hover:bg-blue-700 text-white px-5 py-2.5 rounded-[12px] font-medium text-[15px] flex items-center gap-2 transition-colors"
+                className="bg-[#3b60f6] hover:bg-blue-700 text-white px-5 py-2.5 rounded-[12px] font-medium text-[15px] flex items-center gap-2 whitespace-nowrap transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add New Product
@@ -466,7 +502,49 @@ export default function ProductsPage() {
             )}
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Phones and tablets: one card per product, no sideways scrolling */}
+          <div className="lg:hidden">
+            {statusMessage ? (
+              <p className="py-8 text-center text-slate-500">{statusMessage}</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {products.map((product) => {
+                  const v = product.variants[0];
+                  const brand = product.brandId?.name;
+                  return (
+                    <li key={product._id} className="flex items-start gap-3 py-4">
+                      <img
+                        src={thumbSrc(product)}
+                        alt={product.name}
+                        className="w-16 h-16 max-w-none shrink-0 rounded-[10px] object-cover bg-slate-100"
+                        onError={handleImageError}
+                        loading="lazy"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-bold text-[#111827] leading-snug break-words">{product.name}</p>
+                        <p className="mt-0.5 text-[13px] font-medium text-slate-600 break-words">
+                          {product.category}{brand ? ` · ${brand}` : ''}
+                        </p>
+                        {v ? (
+                          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[13px]">
+                            <span className="font-semibold text-slate-500">{v.volume}</span>
+                            <span className="text-[15px] font-bold text-[#3b60f6]">₹{v.price}</span>
+                            {v.oldPrice ? <span className="font-medium text-slate-400 line-through">₹{v.oldPrice}</span> : null}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-[12px] text-slate-400">
+                          Stock: {product.stock || 0} · Wt: {weightOf(product)}kg · <span className="font-medium text-slate-600">{product.status}</span>
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0">{actions(product)}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
@@ -481,22 +559,16 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr><td colSpan={7} className="py-8 text-center text-slate-500">Loading products...</td></tr>
-                ) : products.length === 0 ? (
-                  <tr><td colSpan={7} className="py-8 text-center text-slate-500">{loadError ? 'Could not load products (the API request failed). Reload to try again.' : 'No products found. Add your first product!'}</td></tr>
+                {statusMessage ? (
+                  <tr><td colSpan={8} className="py-8 text-center text-slate-500">{statusMessage}</td></tr>
                 ) : products.map((product) => {
                   return (
                   <tr key={product._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
                     <td className="py-5 px-6">
-                      <img 
-                        src={getImageUrl(
-                          product.images && product.images.length > 0 
-                            ? product.images[0] 
-                            : (product.variants?.find((v: any) => v.image)?.image || "")
-                        )} 
-                        alt={product.name} 
-                        className="w-[50px] h-[50px] rounded-[10px] object-cover bg-slate-100"
+                      <img
+                        src={thumbSrc(product)}
+                        alt={product.name}
+                        className="w-[50px] h-[50px] max-w-none shrink-0 rounded-[10px] object-cover bg-slate-100"
                         onError={handleImageError}
                         loading="lazy"
                       />
@@ -521,13 +593,7 @@ export default function ProductsPage() {
                       <div className="flex flex-col gap-1">
                         <span className="text-[14px] font-medium text-slate-600">Stock: {product.stock || 0}</span>
                         <span className="text-[13px] text-slate-400">
-                          Wt: {(() => {
-                            const parsed = product.variants?.[0]?.volume ? parseWeightFromVolume(product.variants[0].volume) : null;
-                            if ((product.weight === undefined || product.weight === 0 || product.weight > 10) && parsed !== null) {
-                              return parsed;
-                            }
-                            return product.weight || 0;
-                          })()}kg
+                          Wt: {weightOf(product)}kg
                         </span>
                       </div>
                     </td>
@@ -538,17 +604,7 @@ export default function ProductsPage() {
                       </span>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => handleEdit(product)}
-                          className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                        </button>
-                        <button onClick={() => handleDeleteClick(product._id)} className="w-[38px] h-[38px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                      </div>
+                      <div className="flex items-center gap-3">{actions(product)}</div>
                     </td>
                   </tr>
                   );
@@ -560,7 +616,7 @@ export default function ProductsPage() {
 
         {/* Right Column: Add/Edit Product Form */}
         {isAddProductOpen && (
-          <div className="w-full xl:w-[480px] shrink-0 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
+          <div ref={formRef} className="w-full xl:w-[480px] shrink-0 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 shrink-0">
               <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
