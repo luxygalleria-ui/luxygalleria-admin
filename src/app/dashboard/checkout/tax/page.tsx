@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useSyncExternalStore } from 'react';
+import toast from 'react-hot-toast';
 import { Card, SaveBar, SectionState, Toggle } from '@/components/checkout/fields';
 import { useCheckoutSection } from '@/components/checkout/useCheckoutSection';
 import { useCheckoutProducts } from '@/components/checkout/useCheckoutProducts';
@@ -22,6 +23,12 @@ export default function TaxSettingsPage() {
   const set = <K extends keyof Tax>(k: K, v: Tax[K]) => setDraft((d) => (d ? { ...d, [k]: v } : d));
 
   const missing = p.products.filter((x) => x.taxRate === null).length;
+  // The server refuses enabling GST (either mode) until every product has a SAVED rate; say so before saving
+  const enableBlocked = !!draft?.enabled && !p.loading && (missing > 0 || p.changed.length > 0)
+    ? missing > 0
+      ? `GST can be enabled only when every product has a confirmed GST rate: ${missing} product(s) below have none. Enter and save the rates first.`
+      : 'Save the GST rates entered below first, then enable GST.'
+    : '';
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return p.products.filter((x) => !q || x.name.toLowerCase().includes(q) || x.category?.toLowerCase().includes(q));
@@ -29,6 +36,7 @@ export default function TaxSettingsPage() {
 
   const onSave = async () => {
     if (!s.saved || !draft) return;
+    if (enableBlocked) { toast.error(enableBlocked); return; }
     if (s.saved.pricesIncludeTax !== draft.pricesIncludeTax && draft.enabled
       && !window.confirm(draft.pricesIncludeTax
         ? 'Switch to tax-INCLUSIVE prices? Listed prices will be treated as already containing GST; totals stop adding GST.'
@@ -47,7 +55,10 @@ export default function TaxSettingsPage() {
         <>
           <Card title="GST display and calculation" description="Calculated on the server for checkout, the payment amount and the saved order. Shipping and packaging fees are not taxed here (pending accounting confirmation).">
             <fieldset disabled={!canEdit} className="space-y-4">
-              <Toggle checked={draft.enabled} onChange={(v) => set('enabled', v)} label="Show GST at checkout and on orders" description="Off: no GST lines anywhere (current behaviour)." />
+              <Toggle checked={draft.enabled} onChange={(v) => set('enabled', v)} label="Show GST at checkout and on orders" description="Off: no GST lines anywhere (current behaviour). Requires a confirmed GST rate on every product." />
+              {(s.errors.enabled || enableBlocked) && (
+                <p className={`text-sm ${s.errors.enabled ? 'text-red-600' : 'text-amber-700'}`} role="alert">{s.errors.enabled || enableBlocked}</p>
+              )}
               <div className={`space-y-3 ${draft.enabled ? '' : 'opacity-60'}`}>
                 <p className="text-sm font-medium text-slate-700">Listed product prices are…</p>
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -56,7 +67,7 @@ export default function TaxSettingsPage() {
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="radio" name="incl" className="mt-1 accent-[#8B5E34]" checked={!draft.pricesIncludeTax} onChange={() => set('pricesIncludeTax', false)} />
-                  <span className="text-sm"><strong>Exclusive of GST</strong> — GST is added at checkout. Requires a GST rate on every product{missing ? ` (${missing} missing)` : ''}.</span>
+                  <span className="text-sm"><strong>Exclusive of GST</strong> — GST is added at checkout on top of listed prices.</span>
                 </label>
                 <Toggle checked={draft.showPriceLabel} onChange={(v) => set('showPriceLabel', v)} label="Label prices on the storefront" description="“Inclusive of GST” or “+ GST” next to prices." />
               </div>

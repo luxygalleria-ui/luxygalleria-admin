@@ -51,8 +51,16 @@ interface Order {
   orderStatus: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  trackingNumber?: string; // set by the ERP status callback
+  erpOrderId?: string;
+  statusCorrections?: { at: string; by: string; from: string; to: string; reason: string }[];
   createdAt: string;
 }
+
+// Same rule as the backend (luxy-backend/src/utils/orderStatus.ts): forward only; delivered and cancelled are final
+const STATUS_RANK: Record<string, number> = { processing: 0, shipped: 1, delivered: 2 };
+const canMoveStatus = (from: string, to: string) =>
+  from === to || (to === 'cancelled' ? from === 'processing' || from === 'shipped' : from !== 'cancelled' && STATUS_RANK[to] > STATUS_RANK[from]);
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -68,6 +76,13 @@ export default function OrdersPage() {
   const [historyEnabled, setHistoryEnabled] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const readOnly = source === 'history';
+  // Display only: the backend allows status corrections to superadmins alone, whatever the browser claims
+  // (read once; the panel only renders inside the order modal, after hydration)
+  const [isSuperadmin] = useState(() => {
+    try { return typeof window !== 'undefined' && JSON.parse(localStorage.getItem('adminUser') || '{}')?.role === 'superadmin'; } catch { return false; }
+  });
+  const [correction, setCorrection] = useState({ to: '', reason: '' });
+  const [correcting, setCorrecting] = useState(false);
 
   useEffect(() => {
     fetchOrders(source);
@@ -121,6 +136,23 @@ export default function OrdersPage() {
   };
 
   const activeOrder = orders.find(o => o._id === selectedOrder);
+
+  const handleCorrection = async (order: Order) => {
+    if (!correction.to || correction.reason.trim().length < 5) return toast.error('Choose the corrected status and give a reason (5+ characters)');
+    setCorrecting(true);
+    try {
+      const res = await axios.post(`/payments/admin/orders/${order._id}/status-correction`, { fromStatus: order.orderStatus, orderStatus: correction.to, reason: correction.reason.trim() });
+      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, orderStatus: res.data.data.orderStatus, statusCorrections: res.data.data.statusCorrections } : o));
+      setCorrection({ to: '', reason: '' });
+      toast.success(`Status corrected to ${res.data.data.orderStatus}`);
+    } catch (err) {
+      const r = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      if (r?.status === 401) handleAuthError();
+      else toast.error(r?.data?.message || 'Failed to correct order status');
+    } finally {
+      setCorrecting(false);
+    }
+  };
 
   const getStatusStyle = (status: string) => {
     switch (status.toLowerCase()) {
@@ -274,10 +306,10 @@ export default function OrdersPage() {
                             disabled={updatingOrderId === order._id}
                             className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer disabled:cursor-not-allowed"
                           >
-                            <option value="processing" className="text-slate-800">Processing</option>
-                            <option value="shipped" className="text-slate-800">Shipped</option>
-                            <option value="delivered" className="text-slate-800">Delivered</option>
-                            <option value="cancelled" className="text-slate-800">Cancelled</option>
+                            <option value="processing" disabled={!canMoveStatus(order.orderStatus, 'processing')} className="text-slate-800">Processing</option>
+                            <option value="shipped" disabled={!canMoveStatus(order.orderStatus, 'shipped')} className="text-slate-800">Shipped</option>
+                            <option value="delivered" disabled={!canMoveStatus(order.orderStatus, 'delivered')} className="text-slate-800">Delivered</option>
+                            <option value="cancelled" disabled={!canMoveStatus(order.orderStatus, 'cancelled')} className="text-slate-800">Cancelled</option>
                           </select>
                           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-inherit flex items-center justify-center">
                             {updatingOrderId === order._id ? (
@@ -296,7 +328,7 @@ export default function OrdersPage() {
                       <td className="py-5 px-6">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setSelectedOrder(order._id)}
+                            onClick={() => { setSelectedOrder(order._id); setCorrection({ to: '', reason: '' }); }}
                             className="text-[#3b82f6] hover:text-blue-700 transition-colors flex items-center justify-center p-2 rounded-full hover:bg-blue-50"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
@@ -356,7 +388,35 @@ export default function OrdersPage() {
                     </span>
                   </div>
                   {activeOrder.razorpayOrderId && <p>Razorpay ID: {activeOrder.razorpayOrderId}</p>}
+                  {activeOrder.trackingNumber && <p>Tracking Number: {activeOrder.trackingNumber}</p>}
+                  {activeOrder.erpOrderId && <p>ERP Order ID: {activeOrder.erpOrderId}</p>}
                 </div>
+                {!!activeOrder.statusCorrections?.length && (
+                  <div className="mt-3 text-[13px] text-slate-600 space-y-1">
+                    <p className="font-semibold text-slate-800">Status corrections</p>
+                    {activeOrder.statusCorrections.map((c, i) => (
+                      <p key={i}>{formatFullDate(c.at)}: {c.from} → {c.to} — {c.reason}</p>
+                    ))}
+                  </div>
+                )}
+                {isSuperadmin && !readOnly && (
+                  <div className="mt-4 p-3 rounded-[10px] border border-amber-200 bg-amber-50/60 space-y-2">
+                    <p className="text-[13px] font-semibold text-amber-800">Correct status (superadmin)</p>
+                    <p className="text-[12px] text-amber-700">For mistakes the normal status change cannot undo. Recorded with your name and reason; no email, refund or stock change.</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select aria-label="Corrected status" value={correction.to} onChange={(e) => setCorrection({ ...correction, to: e.target.value })} className="h-[38px] px-2 rounded-[8px] border border-slate-200 bg-white text-[13px]">
+                        <option value="">Corrected status…</option>
+                        {['processing', 'shipped', 'delivered', 'cancelled'].filter((s) => !canMoveStatus(activeOrder.orderStatus, s)).map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <input aria-label="Correction reason" value={correction.reason} maxLength={300} onChange={(e) => setCorrection({ ...correction, reason: e.target.value })} placeholder="Reason (required)" className="flex-1 h-[38px] px-3 rounded-[8px] border border-slate-200 bg-white text-[13px]" />
+                      <button type="button" onClick={() => handleCorrection(activeOrder)} disabled={correcting} className="h-[38px] px-4 rounded-[8px] bg-amber-600 text-white text-[13px] font-semibold disabled:opacity-60">
+                        {correcting ? 'Saving…' : 'Correct'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Customer Information */}
