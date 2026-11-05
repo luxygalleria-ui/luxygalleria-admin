@@ -42,7 +42,7 @@ export default function ChocolateSettingsPage() {
 
   return (
     <div className="space-y-5">
-      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} isDefault={s.isDefault}
+      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} warnings={s.warnings} isDefault={s.isDefault}
         defaultNote="Not saved yet: chocolate shipping is off. The ₹10 per 250 g figure below is a reference only, pending the business owner’s confirmation." />
       {draft && !s.loading && (
         <>

@@ -70,8 +70,8 @@ export function Card({ title, description, children, right }: { title: string; d
 }
 
 /** Loading, load-error and "still on defaults" states shared by every checkout page. */
-export function SectionState({ loading, loadError, reload, isDefault, defaultNote }: {
-  loading: boolean; loadError: string; reload: () => void; isDefault: boolean; defaultNote: string;
+export function SectionState({ loading, loadError, reload, isDefault, defaultNote, warnings = [] }: {
+  loading: boolean; loadError: string; reload: () => void; isDefault: boolean; defaultNote: string; warnings?: string[];
 }) {
   if (loading) return <div className="p-6 text-sm text-slate-500 animate-pulse">Loading saved settings…</div>;
   if (loadError) {
@@ -82,8 +82,15 @@ export function SectionState({ loading, loadError, reload, isDefault, defaultNot
       </div>
     );
   }
-  if (isDefault) return <div className="p-3 border border-amber-200 bg-amber-50 rounded-xl text-sm text-amber-800">{defaultNote}</div>;
-  return null;
+  if (!isDefault && !warnings.length) return null;
+  return (
+    <>
+      {warnings.map((w) => (
+        <div key={w} role="alert" className="p-3 border border-red-200 bg-red-50 rounded-xl text-sm text-red-700">{w}</div>
+      ))}
+      {isDefault && <div className="p-3 border border-amber-200 bg-amber-50 rounded-xl text-sm text-amber-800">{defaultNote}</div>}
+    </>
+  );
 }
 
 /** Sticky save/cancel bar. Disabled until something changed. */

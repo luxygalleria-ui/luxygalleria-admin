@@ -49,7 +49,7 @@ export default function TaxSettingsPage() {
       {!canEdit && (
         <div className="p-3 border border-slate-200 bg-slate-50 rounded-xl text-sm text-slate-600">View only: tax settings and GST rates can be changed by a super admin.</div>
       )}
-      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} isDefault={s.isDefault}
+      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} warnings={s.warnings} isDefault={s.isDefault}
         defaultNote="Not saved yet: GST is not shown or calculated at checkout (current behaviour). Confirm each product’s GST rate with your accountant before enabling." />
       {draft && !s.loading && (
         <>

@@ -25,6 +25,8 @@ export function useCheckoutSection<T>(section: Section) {
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  /** Cross-section conflicts reported by the server (e.g. chocolate allowed only where delivery is off). */
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   // Request defined inside the effect (state set only once it settles); reload bumps the key
   const [reloadKey, setReloadKey] = useState(0);
@@ -38,6 +40,7 @@ export function useCheckoutSection<T>(section: Section) {
         setSaved(value);
         setDraft(structuredClone(value));
         setIsDefault(!res.data.data.saved[section]);
+        setWarnings(res.data.data.warnings ?? []);
         setLoadError('');
       } catch (err) {
         if (cancelled || isUnauthenticated(err)) return;
@@ -51,6 +54,15 @@ export function useCheckoutSection<T>(section: Section) {
   const load = () => { setLoading(true); setLoadError(''); setReloadKey((k) => k + 1); };
 
   const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(draft), [saved, draft]);
+
+  // Another tab or admin may have saved since this page loaded: re-read the stored values when the admin comes back,
+  // so the page never shows settings the checkout is not using. Unsaved edits are left alone.
+  useEffect(() => {
+    if (dirty) return;
+    const refresh = () => setReloadKey((k) => k + 1);
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  }, [dirty]);
 
   // Unsaved changes survive an accidental tab close only with a prompt
   useEffect(() => {
@@ -73,6 +85,7 @@ export function useCheckoutSection<T>(section: Section) {
       setSaved(value);
       setDraft(structuredClone(value));
       setIsDefault(false);
+      setWarnings(res.data.data.warnings ?? []);
       toast.success('Settings saved. Checkout uses them from the next order.');
       return true;
     } catch (err) {
@@ -87,7 +100,7 @@ export function useCheckoutSection<T>(section: Section) {
     }
   };
 
-  return { saved, draft, setDraft, isDefault, loading, loadError, reload: load, saving, errors, dirty, cancel, save };
+  return { saved, draft, setDraft, isDefault, warnings, loading, loadError, reload: load, saving, errors, dirty, cancel, save };
 }
 
 /** Immutable update of a nested path, e.g. set(draft, ['zones', 'kerala', 'land', 'eta'], '2 days'). */

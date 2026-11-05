@@ -44,7 +44,7 @@ export default function ShippingSettingsPage() {
 
   return (
     <div className="space-y-5">
-      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} isDefault={s.isDefault}
+      <SectionState loading={s.loading} loadError={s.loadError} reload={s.reload} warnings={s.warnings} isDefault={s.isDefault}
         defaultNote="Not saved yet: these values are today’s shipping rates (road delivery everywhere, air off). Checkout charges stay the same until you save." />
       {draft && !s.loading && (
         <>
