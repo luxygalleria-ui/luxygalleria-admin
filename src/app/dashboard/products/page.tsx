@@ -4,21 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import axios from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
-
-const parseWeightFromVolume = (volume: string): number | null => {
-  if (!volume) return null;
-  const match = volume.match(/(\d+(?:\.\d+)?)\s*(kg|g|gm|gms|l|ltr|liter|liters|litre|litres|ml)/i);
-  if (match) {
-    const value = parseFloat(match[1]);
-    const unit = match[2].toLowerCase();
-    if (unit === 'kg' || unit === 'l' || unit === 'ltr' || unit === 'liter' || unit === 'liters' || unit === 'litre' || unit === 'litres') {
-      return value;
-    } else if (unit === 'g' || unit === 'gm' || unit === 'gms' || unit === 'ml') {
-      return value / 1000;
-    }
-  }
-  return null;
-};
+import { parseWeightFromVolume, missingWeightMessage, variantWeightKg } from '../../../lib/productWeight';
 
 // Product type matching backend
 interface IVariant {
@@ -319,6 +305,9 @@ export default function ProductsPage() {
       }
       if (!Number.isInteger(Number(v.stock || 0)) || Number(v.stock || 0) < 0) return toast.error(`Variant ${i + 1}: Stock must be a whole number, 0 or more.`);
       if ((v.sku || '').trim().length > 64) return toast.error(`Variant ${i + 1}: SKU must be at most 64 characters.`);
+      // Delivery is priced by weight: refuse a variant with neither a weight nor a size that carries one (never guessed)
+      const weightProblem = missingWeightMessage(v, `Variant ${i + 1} (${v.size || v.volume || 'no size'})`);
+      if (weightProblem) return toast.error(weightProblem, { duration: 8000 });
 
       const sizeVal = (v.size || v.volume || '').trim().toLowerCase();
       const flavorVal = (v.flavor || 'Default').trim().toLowerCase();
@@ -344,10 +333,9 @@ export default function ProductsPage() {
     const variantsWithWeight = variants.map(v => {
       const sizeVal = v.size || v.volume || 'Standard';
       const flavorVal = v.flavor || 'Default';
-      const parsedWeight = parseWeightFromVolume(sizeVal);
       const offerPrice = Number(v.price || 0);
       const actualPrice = Number(v.oldPrice || v.price || 0);
-      const weight = Number(v.weight !== undefined && v.weight > 0 ? v.weight : (parsedWeight !== null ? parsedWeight : 0));
+      const weight = variantWeightKg(v); // same rule as the check above: own weight, else size, else volume
       const stockVal = Number(v.stock !== undefined ? v.stock : 0);
       return {
         _id: v._id,

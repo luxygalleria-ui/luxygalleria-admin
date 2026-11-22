@@ -38,6 +38,8 @@ interface Order {
     zipCode?: string; // absent in read-only production history
     country: string;
   };
+  // Billing snapshot taken at checkout; absent on orders placed before billing addresses existed
+  billingAddress?: { street?: string; city?: string; state?: string; zipCode?: string; country?: string };
   // Absent on orders placed before checkout options existed (home delivery, no extra charges)
   fulfillmentMethod?: 'delivery' | 'pickup';
   shippingMethod?: 'land' | 'air';
@@ -459,6 +461,21 @@ export default function OrdersPage() {
                   <p>{[activeOrder.shippingAddress?.zipCode, activeOrder.shippingAddress?.country].filter(Boolean).join(', ')}</p>
                   {readOnly && <p className="text-[12px] text-slate-400">Street and PIN code hidden (production history)</p>}
                 </div>
+              </div>
+              )}
+
+              {activeOrder.billingAddress?.city && (
+              <div>
+                <h3 className="text-[16px] font-bold text-[#111827] mb-3">Billing Address</h3>
+                {(['street', 'city', 'state', 'zipCode', 'country'] as const).every((k) => (activeOrder.billingAddress?.[k] ?? '') === (activeOrder.shippingAddress?.[k] ?? '')) ? (
+                  <p className="text-[14px] text-slate-700 font-medium">Same as shipping address</p>
+                ) : (
+                <div className="space-y-1.5 text-[14px] text-slate-700 font-medium">
+                  {activeOrder.billingAddress.street && <p>{activeOrder.billingAddress.street}</p>}
+                  <p>{activeOrder.billingAddress.city}{activeOrder.billingAddress.state ? `, ${activeOrder.billingAddress.state}` : ''}</p>
+                  <p>{[activeOrder.billingAddress.zipCode, activeOrder.billingAddress.country].filter(Boolean).join(', ')}</p>
+                </div>
+                )}
               </div>
               )}
 
