@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { ImagePlus, X } from 'lucide-react';
 import apiClient from '@/services/apiClient';
 import { getImageUrl } from '@/lib/imageUtils';
+import { missingWeightMessage } from '@/lib/productWeight';
 
 export interface CreatedProduct {
   _id: string;
@@ -14,7 +15,7 @@ export interface CreatedProduct {
   category?: string;
   categoryId?: string | { _id: string };
   images?: string[];
-  variants?: { offerPrice?: number; price?: number; stock?: number; image?: string }[];
+  variants?: { offerPrice?: number; price?: number; oldPrice?: number; actualPrice?: number; stock?: number; image?: string }[];
 }
 
 interface ProductFormProps {
@@ -110,13 +111,24 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
     // ponytail: price/stock edit only the first variant; edit other sizes on the Products page
     const variants = editing?.variants?.length
       // originalStock: the backend applies a stock change only if stock is still what this form showed
-      ? editing.variants.map((v, i) => (i === 0 ? { ...v, ...priced, originalStock: v.stock ?? 0 } : v))
+      // Editing keeps the saved MRP (oldPrice/actualPrice); it is raised only if the new price is above it
+      ? editing.variants.map((v, i) => {
+          if (i !== 0) return v;
+          const mrp = Math.max(Number(v.actualPrice ?? v.oldPrice) || 0, p);
+          return { ...v, ...priced, oldPrice: mrp, actualPrice: mrp, originalStock: v.stock ?? 0 };
+        })
       : [{ size: 'Standard', volume: 'Standard', flavor: 'Default', weight: 0, ...priced }];
     formData.append('variants', JSON.stringify(variants));
     if (!editing) formData.append(collectionFlag, 'true');
     // A new file replaces the images; otherwise the backend needs the existing ones sent back
     if (imageFile) formData.append('imageFiles', imageFile);
     else editing?.images?.forEach((img) => formData.append('images', img));
+
+    // This quick form has no weight field: say so when the saved product has none (set it on the Products page)
+    const warnIfNoWeight = (saved?: { name?: string; variants?: { weight?: number; size?: string; volume?: string }[] }) => {
+      const problem = saved?.variants?.map((v, i) => missingWeightMessage(v, `${saved.name || 'This product'}${(saved.variants?.length ?? 0) > 1 ? ` (size ${i + 1})` : ''}`)).find(Boolean);
+      if (problem) toast(`${problem} Set the weight on the Products page.`, { icon: '⚠️', duration: 9000 });
+    };
 
     setSaving(true);
     try {
@@ -125,6 +137,7 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
         const res = await apiClient.put(`/products/${editing._id}`, formData, { headers });
         onUpdated?.(res.data.data);
         toast.success('Product updated');
+        warnIfNoWeight(res.data.data);
       } else {
         const res = await apiClient.post('/products', formData, { headers });
         setName('');
@@ -133,6 +146,7 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
         setStock('');
         clearImage();
         await onCreated?.(res.data.data);
+        warnIfNoWeight(res.data.data);
       }
     } catch (err) {
       toast.error((axios.isAxiosError(err) && err.response?.data?.message) || 'Failed to save product');

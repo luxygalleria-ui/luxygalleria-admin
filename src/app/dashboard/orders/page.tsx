@@ -38,6 +38,8 @@ interface Order {
     zipCode?: string; // absent in read-only production history
     country: string;
   };
+  // Billing snapshot taken at checkout; absent on orders placed before billing addresses existed
+  billingAddress?: { street?: string; city?: string; state?: string; zipCode?: string; country?: string };
   // Absent on orders placed before checkout options existed (home delivery, no extra charges)
   fulfillmentMethod?: 'delivery' | 'pickup';
   shippingMethod?: 'land' | 'air';
@@ -57,6 +59,9 @@ interface Order {
   trackingNumber?: string; // set by the ERP status callback
   erpOrderId?: string;
   statusCorrections?: { at: string; by: string; from: string; to: string; reason: string }[];
+  // Refund record (admin view). "required" = cancelled after payment, awaiting the superadmin refund action
+  refund?: { status?: 'required' | 'requested' | 'pending' | 'processed' | 'failed'; amountPaise?: number; reason?: string; lastError?: string;
+    events?: { at: string; by?: string; action?: string; outcome?: string; detail?: string }[] };
   createdAt: string;
   updatedAt?: string;
 }
@@ -75,6 +80,9 @@ export default function OrdersPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, orderId: string | null}>({ isOpen: false, orderId: null });
   const [deleting, setDeleting] = useState(false);
+  // Superadmin refund dialog: a reason and the typed order reference are required before anything is sent
+  const [refundDialog, setRefundDialog] = useState<{ order: Order; reason: string; confirmRef: string } | null>(null);
+  const [refunding, setRefunding] = useState(false);
   // 'history' = read-only production history (local development only); 'local' = this database
   // This database first: it holds the orders admins act on (and new checkouts); production history is a read-only view
   const [source, setSource] = useState<'history' | 'local'>('local');
@@ -179,6 +187,17 @@ export default function OrdersPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     if (updatingOrderId === id) return; // Prevent duplicate requests
+    // Cancelled is final: always confirm, and say what happens to stock and to a paid customer's money
+    if (newStatus === 'cancelled') {
+      const o = orders.find((x) => x._id === id);
+      const paid = o?.paymentStatus === 'completed';
+      const lines = [
+        `Cancel order #${id.substring(0, 8)}? This cannot be undone.`,
+        o?.orderStatus === 'processing' ? 'The items go back into stock.' : 'The items have shipped, so stock is NOT restored automatically.',
+        paid ? `The customer has PAID ₹${o?.total}. The order will be marked "refund required"; a super admin then issues the refund from the order details.` : '',
+      ].filter(Boolean);
+      if (!window.confirm(lines.join('\n\n'))) return;
+    }
 
     try {
       setUpdatingOrderId(id);
@@ -188,7 +207,7 @@ export default function OrdersPage() {
 
       if (res.data.success) {
         setOrders(prevOrders => prevOrders.map(order =>
-          order._id === id ? { ...order, orderStatus: newStatus } : order
+          order._id === id ? { ...order, ...(res.data.data ?? {}), orderStatus: newStatus } : order
         ));
         toast.success(`Order status updated to ${newStatus}`);
       }
@@ -201,6 +220,28 @@ export default function OrdersPage() {
       }
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const refundable = (o: Order) => o.paymentMethod === 'icici' && o.paymentStatus === 'completed'
+    && !['pending', 'processed'].includes(o.refund?.status ?? '');
+  const submitRefund = async () => {
+    if (!refundDialog || refunding) return;
+    const { order, reason } = refundDialog;
+    setRefunding(true);
+    try {
+      const res = await axios.post('/payments/icici/refund', { orderId: order._id, reason: reason.trim() });
+      toast.success(res.data?.data?.status === 'processed' ? `Refund of ₹${order.total} processed` : res.data?.message || 'Refund submitted');
+      setRefundDialog(null);
+      await fetchOrders(source); // show the stored refund record
+    } catch (e) {
+      const err = e as { response?: { status?: number; data?: { message?: string } } };
+      if (err.response?.status === 401) { handleAuthError(); return; }
+      // 502 REFUND_UNCONFIRMED: outcome unknown, retrying sends the same refund reference (never a second refund)
+      toast.error(err.response?.data?.message || 'The refund could not be completed. Nothing was charged twice; you can retry.');
+      await fetchOrders(source);
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -339,7 +380,8 @@ export default function OrdersPage() {
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                           </button>
-                          {!readOnly && <button
+                          {/* Superadmin only, unpaid or failed orders only (the server enforces the same) */}
+                          {!readOnly && isSuperadmin && ['pending', 'failed'].includes(order.paymentStatus) && <button
                             onClick={() => handleDeleteClick(order._id)}
                             className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                             title="Delete Order"
@@ -407,6 +449,33 @@ export default function OrdersPage() {
                     ))}
                   </div>
                 )}
+                {/* Refund: record (everyone) and action (super admin, paid ICICI orders) */}
+                {!readOnly && (activeOrder.refund?.status || refundable(activeOrder)) && (
+                  <div className="mt-4 p-3 rounded-[10px] border border-slate-200 bg-slate-50 space-y-2" aria-label="Refund">
+                    <p className="text-[13px] font-semibold text-slate-800">Refund</p>
+                    {activeOrder.refund?.status && (
+                      <div className="text-[13px] text-slate-700 space-y-1">
+                        <p>Status: <span className="font-semibold">{({ required: 'Refund required', requested: 'Requested (outcome unknown, retry is safe)', pending: 'Pending at the bank', processed: 'Refunded', failed: 'Failed' } as Record<string, string>)[activeOrder.refund.status] ?? activeOrder.refund.status}</span></p>
+                        {typeof activeOrder.refund.amountPaise === 'number' && <p>Amount: ₹{activeOrder.refund.amountPaise / 100}</p>}
+                        {activeOrder.refund.reason && <p>Reason: {activeOrder.refund.reason}</p>}
+                        {activeOrder.refund.lastError && <p className="text-red-600">Last error: {activeOrder.refund.lastError}</p>}
+                        {!!activeOrder.refund.events?.length && (
+                          <ul className="text-[12px] text-slate-500 list-disc pl-4">
+                            {activeOrder.refund.events.map((e, i) => <li key={i}>{formatFullDate(e.at)}: {e.action}{e.outcome ? ` (${e.outcome})` : ''}</li>)}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                    {refundable(activeOrder) && (isSuperadmin ? (
+                      <button type="button" onClick={() => setRefundDialog({ order: activeOrder, reason: '', confirmRef: '' })}
+                        className="h-[38px] px-4 rounded-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700">
+                        {activeOrder.refund?.status === 'requested' || activeOrder.refund?.status === 'failed' ? 'Retry refund' : 'Refund'} ₹{activeOrder.total}
+                      </button>
+                    ) : (
+                      <p className="text-[12px] text-slate-500">Only a super admin can issue refunds.</p>
+                    ))}
+                  </div>
+                )}
                 {isSuperadmin && !readOnly && (
                   <div className="mt-4 p-3 rounded-[10px] border border-amber-200 bg-amber-50/60 space-y-2">
                     <p className="text-[13px] font-semibold text-amber-800">Correct status (superadmin)</p>
@@ -459,6 +528,21 @@ export default function OrdersPage() {
                   <p>{[activeOrder.shippingAddress?.zipCode, activeOrder.shippingAddress?.country].filter(Boolean).join(', ')}</p>
                   {readOnly && <p className="text-[12px] text-slate-400">Street and PIN code hidden (production history)</p>}
                 </div>
+              </div>
+              )}
+
+              {activeOrder.billingAddress?.city && (
+              <div>
+                <h3 className="text-[16px] font-bold text-[#111827] mb-3">Billing Address</h3>
+                {(['street', 'city', 'state', 'zipCode', 'country'] as const).every((k) => (activeOrder.billingAddress?.[k] ?? '') === (activeOrder.shippingAddress?.[k] ?? '')) ? (
+                  <p className="text-[14px] text-slate-700 font-medium">Same as shipping address</p>
+                ) : (
+                <div className="space-y-1.5 text-[14px] text-slate-700 font-medium">
+                  {activeOrder.billingAddress.street && <p>{activeOrder.billingAddress.street}</p>}
+                  <p>{activeOrder.billingAddress.city}{activeOrder.billingAddress.state ? `, ${activeOrder.billingAddress.state}` : ''}</p>
+                  <p>{[activeOrder.billingAddress.zipCode, activeOrder.billingAddress.country].filter(Boolean).join(', ')}</p>
+                </div>
+                )}
               </div>
               )}
 
@@ -567,6 +651,37 @@ export default function OrdersPage() {
                 ) : (
                   'Delete'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund confirmation (super admin): full refund of the order total through ICICI */}
+      {refundDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4" role="dialog" aria-modal="true" aria-label="Confirm refund">
+          <div className="bg-white rounded-[16px] max-w-md w-full p-6 shadow-xl space-y-4">
+            <h3 className="text-[20px] font-bold text-[#111827]">Refund ₹{refundDialog.order.total}?</h3>
+            <div className="text-[14px] text-slate-700 space-y-1">
+              <p>Order #{refundDialog.order._id.substring(0, 8)} · {refundDialog.order.user?.name || 'Customer'}</p>
+              <p>The full order total goes back to the customer&apos;s original payment method through ICICI. This cannot be undone.</p>
+            </div>
+            <label className="block text-[13px] font-semibold text-slate-700">Reason (required, shown in the order record)
+              <textarea value={refundDialog.reason} maxLength={300} rows={3}
+                onChange={(e) => setRefundDialog({ ...refundDialog, reason: e.target.value })}
+                className="mt-1 w-full p-2 rounded-[8px] border border-slate-200 text-[14px] font-normal" />
+            </label>
+            <label className="block text-[13px] font-semibold text-slate-700">Type the order reference <span className="font-mono">{refundDialog.order._id.substring(0, 8)}</span> to confirm
+              <input value={refundDialog.confirmRef} onChange={(e) => setRefundDialog({ ...refundDialog, confirmRef: e.target.value })}
+                className="mt-1 w-full h-[38px] px-2 rounded-[8px] border border-slate-200 font-mono text-[14px] font-normal" />
+            </label>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setRefundDialog(null)} disabled={refunding}
+                className="flex-1 px-4 py-3 rounded-[12px] border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={submitRefund}
+                disabled={refunding || refundDialog.reason.trim().length < 3 || refundDialog.confirmRef.trim() !== refundDialog.order._id.substring(0, 8)}
+                className="flex-1 px-4 py-3 rounded-[12px] bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50">
+                {refunding ? 'Refunding…' : `Refund ₹${refundDialog.order.total}`}
               </button>
             </div>
           </div>

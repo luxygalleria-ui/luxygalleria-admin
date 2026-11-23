@@ -77,6 +77,13 @@ export function useCheckoutSection<T>(section: Section) {
   /** PUT the draft. Returns true when the server accepted it. */
   const save = async (): Promise<boolean> => {
     if (!draft) return false;
+    // A cleared number input is NaN, which JSON sends as null ("Expected number, received null"): flag it here instead
+    const blank = blankNumbers(draft);
+    if (blank.length) {
+      setErrors(Object.fromEntries(blank.map((f) => [f, 'Enter a number (0 if none)'])));
+      toast.error('Please fill in the highlighted number fields.');
+      return false;
+    }
     setSaving(true);
     setErrors({});
     try {
@@ -101,6 +108,13 @@ export function useCheckoutSection<T>(section: Section) {
   };
 
   return { saved, draft, setDraft, isDefault, warnings, loading, loadError, reload: load, saving, errors, dirty, cancel, save };
+}
+
+/** Dotted paths (the server's error keys, e.g. "zones.kerala.land.chargeBelow") of every NaN number in a draft. */
+export function blankNumbers(v: unknown, path: string[] = []): string[] {
+  if (typeof v === 'number') return Number.isNaN(v) ? [path.join('.')] : [];
+  if (v && typeof v === 'object') return Object.entries(v).flatMap(([k, x]) => blankNumbers(x, [...path, k]));
+  return [];
 }
 
 /** Immutable update of a nested path, e.g. set(draft, ['zones', 'kerala', 'land', 'eta'], '2 days'). */

@@ -48,7 +48,7 @@ export default function PickupSettingsPage() {
                 <TextInput value={draft.readyTime} onChange={(v) => set('readyTime', v)} />
               </Field>
               <Field label="Pickup charge" hint="0 = free. Only charged when greater than 0." error={errors.charge}>
-                <NumberInput value={draft.charge} onChange={(v) => set('charge', v)} suffix="₹" />
+                <NumberInput value={draft.charge} onChange={(v) => set('charge', Number.isNaN(v) ? 0 : v)} suffix="₹" />
               </Field>
               <div className="sm:col-span-2">
                 <Field label="Pickup instructions" hint="Shown at checkout and on the order" error={errors.instructions}>
@@ -59,7 +59,7 @@ export default function PickupSettingsPage() {
           </Card>
           <Card title="Payment options for pickup orders">
             <div className="space-y-3">
-              <Toggle checked onChange={() => undefined} disabled label="Pay Now (online, Razorpay)" description="Payment is taken and verified online before the order is confirmed." />
+              <Toggle checked onChange={() => undefined} disabled label="Pay Now (online, ICICI Bank)" description="Payment is taken and verified online before the order is confirmed." />
               <Toggle checked={false} onChange={() => undefined} disabled label="Pay at store" description="Not available yet: needs an unpaid-order flow and a business decision on reservations and no-shows." />
             </div>
           </Card>

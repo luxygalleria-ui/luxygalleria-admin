@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" }); // --font-inter feeds --font-sans in globals.css
 
 export const metadata: Metadata = {
   title: "Luxy Galleria Admin",
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body className={`${inter.className} bg-slate-50 text-slate-900 min-h-screen flex flex-col`}>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         {children}
