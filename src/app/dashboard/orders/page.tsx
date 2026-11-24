@@ -21,6 +21,13 @@ interface OrderItem {
 
 /** Stored payment status -> label. "completed" is set only by server-side Razorpay verification (or the webhook). */
 const PAYMENT_LABEL: Record<string, string> = { pending: 'Pending', completed: 'Paid', failed: 'Failed', refunded: 'Refunded' };
+// ICICI UAT test orders (testPayment, set by the server): no money was received
+const TEST_ORDER_BADGE = 'UAT TEST — NO MONEY RECEIVED — DO NOT SHIP';
+const TestBadge = () => (
+  <span data-testid="uat-test-badge" className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-[11px] font-extrabold tracking-wide uppercase bg-red-600 text-white">
+    {TEST_ORDER_BADGE}
+  </span>
+);
 
 interface Order {
   _id: string;
@@ -53,6 +60,8 @@ interface Order {
   total: number;
   paymentMethod: string;
   paymentStatus: string;
+  /** ICICI UAT test payment: no money received, never ship or refund */
+  testPayment?: boolean;
   orderStatus: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
@@ -68,6 +77,8 @@ interface Order {
 
 // Same rule as the backend (luxy-backend/src/utils/orderStatus.ts): forward only; delivered and cancelled are final
 const STATUS_RANK: Record<string, number> = { processing: 0, shipped: 1, delivered: 2 };
+// UAT test orders can never be shipped or delivered (the backend refuses it on every path; this only hides the choice)
+const shipBlocked = (o: { testPayment?: boolean }, to: string) => !!o.testPayment && (to === 'shipped' || to === 'delivered');
 const canMoveStatus = (from: string, to: string) =>
   from === to || (to === 'cancelled' ? from === 'processing' || from === 'shipped' : from !== 'cancelled' && STATUS_RANK[to] > STATUS_RANK[from]);
 
@@ -223,7 +234,7 @@ export default function OrdersPage() {
     }
   };
 
-  const refundable = (o: Order) => o.paymentMethod === 'icici' && o.paymentStatus === 'completed'
+  const refundable = (o: Order) => !o.testPayment && o.paymentMethod === 'icici' && o.paymentStatus === 'completed'
     && !['pending', 'processed'].includes(o.refund?.status ?? '');
   const submitRefund = async () => {
     if (!refundDialog || refunding) return;
@@ -332,8 +343,11 @@ export default function OrdersPage() {
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <tr key={order._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                      <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">#{order._id.substring(0, 8)}</td>
+                    <tr key={order._id} className={`border-b border-slate-100 last:border-0 transition-colors ${order.testPayment ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-slate-50/50'}`}>
+                      <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">
+                        #{order._id.substring(0, 8)}
+                        {order.testPayment && <div className="mt-1"><TestBadge /></div>}
+                      </td>
                       <td className="py-5 px-6">
                         <div className="flex flex-col">
                           <span className="font-bold text-[#111827] text-[14px] leading-tight mb-0.5">{order.user?.name || 'Unknown'}</span>
@@ -354,8 +368,8 @@ export default function OrdersPage() {
                             className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer disabled:cursor-not-allowed"
                           >
                             <option value="processing" disabled={!canMoveStatus(order.orderStatus, 'processing')} className="text-slate-800">Processing</option>
-                            <option value="shipped" disabled={!canMoveStatus(order.orderStatus, 'shipped')} className="text-slate-800">Shipped</option>
-                            <option value="delivered" disabled={!canMoveStatus(order.orderStatus, 'delivered')} className="text-slate-800">Delivered</option>
+                            <option value="shipped" disabled={shipBlocked(order, 'shipped') || !canMoveStatus(order.orderStatus, 'shipped')} className="text-slate-800">Shipped</option>
+                            <option value="delivered" disabled={shipBlocked(order, 'delivered') || !canMoveStatus(order.orderStatus, 'delivered')} className="text-slate-800">Delivered</option>
                             <option value="cancelled" disabled={!canMoveStatus(order.orderStatus, 'cancelled')} className="text-slate-800">Cancelled</option>
                           </select>
                           <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-inherit flex items-center justify-center">
@@ -426,6 +440,7 @@ export default function OrdersPage() {
                       {activeOrder.orderStatus}
                     </span>
                   </div>
+                  {activeOrder.testPayment && <div className="py-1"><TestBadge /></div>}
                   <p>Date: {formatFullDate(activeOrder.createdAt)}</p>
                   {activeOrder.updatedAt && <p>Updated: {formatFullDate(activeOrder.updatedAt)}</p>}
                   <p>Payment: {activeOrder.paymentMethod}</p>
@@ -483,7 +498,7 @@ export default function OrdersPage() {
                     <div className="flex flex-col sm:flex-row gap-2">
                       <select aria-label="Corrected status" value={correction.to} onChange={(e) => setCorrection({ ...correction, to: e.target.value })} className="h-[38px] px-2 rounded-[8px] border border-slate-200 bg-white text-[13px]">
                         <option value="">Corrected status…</option>
-                        {['processing', 'shipped', 'delivered', 'cancelled'].filter((s) => !canMoveStatus(activeOrder.orderStatus, s)).map((s) => (
+                        {['processing', 'shipped', 'delivered', 'cancelled'].filter((s) => !canMoveStatus(activeOrder.orderStatus, s) && !shipBlocked(activeOrder, s)).map((s) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
