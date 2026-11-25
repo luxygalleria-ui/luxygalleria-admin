@@ -18,7 +18,7 @@ export default function CheckoutSettingsLayout({ children }: { children: React.R
         <h1 className="text-2xl font-bold text-slate-900">Checkout &amp; Fulfillment Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Saved here, applied by the server to every new checkout. Existing orders keep the amounts they were placed with.</p>
       </div>
-      <nav className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" aria-label="Checkout settings sections">
+      <nav className="flex flex-wrap gap-2 pb-1" aria-label="Checkout settings sections">
         {CHECKOUT_TABS.map((t) => {
           const active = pathname.startsWith(t.href);
           return (

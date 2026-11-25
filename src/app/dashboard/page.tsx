@@ -105,8 +105,8 @@ export default function DashboardPage() {
   const getStatusStyle = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'delivered': return 'bg-[#dcfce7] text-[#16a34a]';
-      case 'processing': return 'bg-[#e0e7ff] text-[#4f46e5]';
-      case 'shipped': return 'bg-[#dbeafe] text-[#2563eb]';
+      case 'processing': return 'bg-[#F0E4D1] text-[#6E4726]';
+      case 'shipped': return 'bg-[#F0E4D1] text-[#8C5A2B]';
       case 'cancelled': return 'bg-[#fee2e2] text-[#dc2626]';
       default: return 'bg-slate-100 text-slate-600';
     }
@@ -129,7 +129,7 @@ export default function DashboardPage() {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
       ),
-      iconBg: 'bg-[#e0f2fe]',
+      iconBg: 'bg-[#F0E4D1]',
       iconColor: 'text-[#0284c7]'
     },
     {
@@ -156,8 +156,8 @@ export default function DashboardPage() {
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
       ),
-      iconBg: 'bg-[#e0e7ff]',
-      iconColor: 'text-[#4f46e5]'
+      iconBg: 'bg-[#F0E4D1]',
+      iconColor: 'text-[#6E4726]'
     },
     {
       label: 'Banners',
@@ -228,7 +228,7 @@ export default function DashboardPage() {
       <div className="mt-6 sm:mt-8 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60">
         <div className="flex items-center justify-between mb-5 sm:mb-6">
           <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">Recent Transactions</h2>
-          <a href="/dashboard/orders" className="text-[14px] sm:text-[15px] font-bold text-[#3b60f6] hover:text-blue-700 py-1 px-2 rounded-lg hover:bg-blue-50 transition-colors">
+          <a href="/dashboard/orders" className="text-[14px] sm:text-[15px] font-bold text-[#8C5A2B] hover:text-blue-700 py-1 px-2 rounded-lg hover:bg-blue-50 transition-colors">
             View All
           </a>
         </div>
@@ -301,8 +301,8 @@ export default function DashboardPage() {
 }
 
 const STATUS_LABELS: [string, string, string][] = [
-  ['processing', 'Processing', 'bg-[#4f46e5]'],
-  ['shipped', 'Shipped', 'bg-[#2563eb]'],
+  ['processing', 'Processing', 'bg-[#6E4726]'],
+  ['shipped', 'Shipped', 'bg-[#8C5A2B]'],
   ['delivered', 'Delivered', 'bg-[#16a34a]'],
   ['cancelled', 'Cancelled', 'bg-[#dc2626]'],
 ];

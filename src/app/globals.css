@@ -3,14 +3,19 @@
 @theme inline {
   --font-sans: var(--font-inter);
 
-  /* Override default blue with Luxy colors */
-  --color-blue-50: #FAF8F5;
-  --color-blue-100: #F5F1E8;
-  --color-blue-400: #C9A961;
-  --color-blue-500: #A68B5B; /* Primary */
-  --color-blue-600: #8B5E34; /* Hover state */
-  --color-blue-700: #6B5344; /* Active/Dark state */
-  --color-blue-800: #4A3A2C;
+  /* No blue in the admin: every blue-* utility is the Luxy Galleria warm palette (cream -> gold -> bronze -> espresso).
+     500+ carry white text at >= 4.5:1. */
+  --color-blue-50: #FFFDF9;
+  --color-blue-100: #FAF6F0;
+  --color-blue-200: #F0E4D1;
+  --color-blue-300: #DFC79E;
+  --color-blue-400: #C59B27;
+  --color-blue-500: #8C5A2B; /* Primary */
+  --color-blue-600: #6E4726; /* Hover */
+  --color-blue-700: #5A3A1F; /* Active / dark text */
+  --color-blue-800: #3A2A1E;
+  --color-blue-900: #1E1815;
+  --color-blue-950: #1C1410;
 }
 
 @layer base {

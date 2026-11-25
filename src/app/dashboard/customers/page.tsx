@@ -125,8 +125,8 @@ export default function CustomersPage() {
           <div className="flex flex-wrap items-center gap-3">
             {historyEnabled && (
               <div className="inline-flex rounded-[10px] border border-slate-200 p-1 text-[13px] font-semibold" role="group" aria-label="Customer data source">
-                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
-                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
+                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
+                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
               </div>
             )}
             <span className="text-[13px] text-slate-500 font-medium">{customers.length} customers</span>
@@ -138,7 +138,7 @@ export default function CustomersPage() {
             <p className="text-lg font-medium">{loadError ? 'Could not load customers (the API request failed).' : 'No customers yet'}</p>
             <p className="text-sm mt-2">{historyError || (loadError ? 'Check that the backend is running.' : 'Customers will appear here once they register.')}</p>
             {loadError && (
-              <button onClick={() => fetchCustomers(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
+              <button onClick={() => fetchCustomers(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#FAF6F0] text-[#8C5A2B] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
             )}
           </div>
         ) : (

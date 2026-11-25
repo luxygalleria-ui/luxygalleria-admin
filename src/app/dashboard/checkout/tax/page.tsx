@@ -83,24 +83,24 @@ export default function TaxSettingsPage() {
         {p.loading ? <p className="text-sm text-slate-500 animate-pulse">Loading products…</p>
           : p.loadError ? <div className="text-sm text-red-700 flex items-center gap-3">{p.loadError}<button onClick={p.reload} className="px-3 py-1 rounded bg-red-600 text-white">Retry</button></div>
           : (
-            <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
-              <table className="w-full text-sm min-w-[480px]">
+            <div className="md:overflow-x-auto max-h-[520px] overflow-y-auto">
+              <table className="stack-table w-full text-sm md:min-w-[480px]">
                 <thead className="text-left text-xs text-slate-500 uppercase sticky top-0 bg-white">
                   <tr><th className="py-2 pr-3">Product</th><th className="py-2 pr-3 w-32">GST %</th><th className="py-2 w-36">HSN code</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {visible.map((x) => (
                     <tr key={x._id}>
-                      <td className="py-2 pr-3">
+                      <td data-label="Product" className="py-2 pr-3">
                         <span className="block font-medium text-slate-800">{x.name}</span>
                         {x.category && <span className="block text-xs text-slate-500">{x.category}</span>}
                       </td>
-                      <td className="py-2 pr-3">
+                      <td data-label="GST %" className="py-2 pr-3">
                         <input type="number" min={0} max={100} step="0.01" disabled={!canEdit} placeholder="Not set"
                           value={x.taxRate ?? ''} onChange={(e) => p.update(x._id, { taxRate: e.target.value === '' ? null : Number(e.target.value) })}
                           className="w-full border border-slate-300 rounded-lg px-2 py-1.5 disabled:bg-slate-50" />
                       </td>
-                      <td className="py-2">
+                      <td data-label="HSN code" className="py-2">
                         <input type="text" inputMode="numeric" maxLength={8} disabled={!canEdit} value={x.hsnCode}
                           onChange={(e) => p.update(x._id, { hsnCode: e.target.value.replace(/\D/g, '') })}
                           className="w-full border border-slate-300 rounded-lg px-2 py-1.5 disabled:bg-slate-50" />

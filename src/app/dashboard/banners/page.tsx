@@ -187,7 +187,7 @@ export default function BannersPage() {
             <h2 className="text-[16px] font-medium text-slate-800">Homepage Banners</h2>
             <button
               onClick={handleAddClick}
-              className="bg-[#2563eb] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
+              className="bg-[#8C5A2B] hover:bg-blue-700 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] flex items-center gap-2 transition-colors shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               Add New Banner
@@ -240,7 +240,7 @@ export default function BannersPage() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleEditClick(banner)}
-                          className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          className="w-[38px] h-[38px] rounded-[10px] bg-[#FAF6F0] text-[#8C5A2B] hover:bg-blue-100 flex items-center justify-center transition-colors"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
@@ -285,7 +285,7 @@ export default function BannersPage() {
                   placeholder="Enter banner title (optional)"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px]"
+                  className="w-full h-[48px] px-4 rounded-[12px] border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8C5A2B]/20 focus:border-[#8C5A2B] transition-all text-[14px]"
                 />
 
               </div>
@@ -297,7 +297,7 @@ export default function BannersPage() {
                     placeholder="Enter banner text (use Enter for new lines)"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    className="w-full h-[96px] px-4 py-2 rounded-[12px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all text-[14px] resize-none"
+                    className="w-full h-[96px] px-4 py-2 rounded-[12px] border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#8C5A2B]/20 focus:border-[#8C5A2B] transition-all text-[14px] resize-none"
                   />
                 </div>
 
@@ -319,7 +319,7 @@ export default function BannersPage() {
                       setImage('');
                     }
                   }}
-                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer" />
+                  className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#8C5A2B] hover:file:bg-blue-100 transition-colors cursor-pointer" />
 
                   {(image || imageFile) && (
                     <div className="mt-4">
@@ -353,7 +353,7 @@ export default function BannersPage() {
                         setMobileImage('');
                       }
                     }}
-                    className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#2563eb] hover:file:bg-blue-100 transition-colors cursor-pointer"
+                    className="w-full text-[14px] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#8C5A2B] hover:file:bg-blue-100 transition-colors cursor-pointer"
                   />
                   {(mobileImage || mobileImageFile) && (
                     <div className="mt-4">
@@ -373,7 +373,7 @@ export default function BannersPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={saving}
-                  className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#2563eb] hover:bg-blue-700'} text-white h-[48px] rounded-[12px] font-bold text-[15px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#8C5A2B] hover:bg-blue-700'} text-white h-[48px] rounded-[12px] font-bold text-[15px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                   {saving ? 'Saving...' : (editingId ? 'Update Banner' : 'Create Banner')}
                 </button>

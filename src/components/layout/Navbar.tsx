@@ -21,6 +21,10 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   else if (pathname.includes('/contacts')) title = 'Messages';
   else if (pathname.includes('/gifting')) title = 'Gifting';
   else if (pathname.includes('/new-arrivals')) title = 'New Arrivals';
+  else if (pathname.includes('/video-testimonials')) title = 'Video Reviews';
+  else if (pathname.includes('/testimonials')) title = 'Testimonials';
+  else if (pathname.includes('/faqs')) title = 'FAQs';
+  else if (pathname.includes('/checkout')) title = 'Checkout & Fulfillment';
 
   return (
     <header className="bg-white border-b border-slate-200 h-[64px] lg:h-[100px] flex items-center justify-between px-4 sm:px-6 lg:px-8 z-40 sticky top-0 shrink-0">
@@ -41,7 +45,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-[14px] bg-[#3b60f6] text-white flex items-center justify-center text-lg lg:text-xl font-bold shadow-sm">
+          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-[14px] bg-[#8C5A2B] text-white flex items-center justify-center text-lg lg:text-xl font-bold shadow-sm">
             S
           </div>
           <div className="flex-col hidden sm:flex">

@@ -172,12 +172,12 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
             onDragLeave={() => setDragging(false)}
             onDrop={(e) => { e.preventDefault(); setDragging(false); pickImage(e.dataTransfer.files[0]); }}
             className={`flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-[12px] border-2 border-dashed text-center transition-colors ${
-              dragging ? 'border-[#2563eb] bg-blue-50/50' : 'border-slate-200 hover:border-[#2563eb]'
+              dragging ? 'border-[#8C5A2B] bg-blue-50/50' : 'border-slate-200 hover:border-[#8C5A2B]'
             }`}
           >
             <ImagePlus className="text-slate-400" size={28} />
             <span className="text-[13px] text-slate-500">
-              <span className="font-medium text-[#2563eb]">Click to upload</span> or drag and drop
+              <span className="font-medium text-[#8C5A2B]">Click to upload</span> or drag and drop
             </span>
             <input type="file" accept="image/*" className="sr-only" onChange={(e) => pickImage(e.target.files?.[0])} />
           </label>
@@ -224,7 +224,7 @@ export default function ProductForm({ onCreated, editing, onUpdated, onCancelEdi
       <button
         type="submit"
         disabled={saving}
-        className="bg-[#2563eb] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
+        className="bg-[#8C5A2B] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
       >
         {saving ? 'Saving...' : editing ? 'Update Product' : submitLabel}
       </button>

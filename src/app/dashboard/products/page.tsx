@@ -454,7 +454,7 @@ export default function ProductsPage() {
       <button
         onClick={() => handleEdit(product)}
         aria-label={`Edit ${product.name}`}
-        className="w-[38px] h-[38px] rounded-[10px] bg-[#eff6ff] text-[#3b82f6] hover:bg-blue-100 flex items-center justify-center transition-colors"
+        className="w-[38px] h-[38px] rounded-[10px] bg-[#FAF6F0] text-[#8C5A2B] hover:bg-blue-100 flex items-center justify-center transition-colors"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
       </button>
@@ -480,7 +480,7 @@ export default function ProductsPage() {
             {!isAddProductOpen ? (
               <button
                 onClick={openAddForm}
-                className="bg-[#3b60f6] hover:bg-blue-700 text-white px-5 py-2.5 rounded-[12px] font-medium text-[15px] flex items-center gap-2 whitespace-nowrap transition-colors"
+                className="bg-[#8C5A2B] hover:bg-blue-700 text-white px-5 py-2.5 rounded-[12px] font-medium text-[15px] flex items-center gap-2 whitespace-nowrap transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add New Product
@@ -518,7 +518,7 @@ export default function ProductsPage() {
                         {v ? (
                           <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[13px]">
                             <span className="font-semibold text-slate-500">{v.volume}</span>
-                            <span className="text-[15px] font-bold text-[#3b60f6]">₹{v.price}</span>
+                            <span className="text-[15px] font-bold text-[#8C5A2B]">₹{v.price}</span>
                             {v.oldPrice ? <span className="font-medium text-slate-400 line-through">₹{v.oldPrice}</span> : null}
                           </p>
                         ) : null}
@@ -570,7 +570,7 @@ export default function ProductsPage() {
                       {product.variants.length > 0 ? (
                         <div className="flex flex-col">
                           <span className="text-[13px] font-semibold text-slate-500 mb-0.5">{product.variants[0].volume}</span>
-                          <span className="text-[15px] font-bold text-[#3b60f6]">₹{product.variants[0].price}</span>
+                          <span className="text-[15px] font-bold text-[#8C5A2B]">₹{product.variants[0].price}</span>
                           {product.variants[0].oldPrice && (
                             <span className="text-[13px] font-medium text-slate-400 line-through">₹{product.variants[0].oldPrice}</span>
                           )}
@@ -679,7 +679,7 @@ export default function ProductsPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <label className="block text-[14px] font-bold text-slate-900">Product Variants</label>
-                  <button onClick={handleAddVariant} className="bg-[#3b60f6] hover:bg-blue-700 text-white px-3 py-1.5 rounded-[8px] text-[13px] font-semibold flex items-center gap-1.5 transition-colors">
+                  <button onClick={handleAddVariant} className="bg-[#8C5A2B] hover:bg-blue-700 text-white px-3 py-1.5 rounded-[8px] text-[13px] font-semibold flex items-center gap-1.5 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Add Variant
                   </button>
@@ -973,7 +973,7 @@ export default function ProductsPage() {
               <button 
                 onClick={handleSubmit}
                 disabled={saving}
-                className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#3b60f6] hover:bg-blue-700'} text-white h-[50px] rounded-[12px] font-bold text-[16px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full ${editingId ? 'bg-[#10b981] hover:bg-emerald-600' : 'bg-[#8C5A2B] hover:bg-blue-700'} text-white h-[50px] rounded-[12px] font-bold text-[16px] transition-colors shadow-sm ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {saving ? 'Saving...' : (editingId ? 'Update Product' : 'Create Product')}
               </button>

@@ -175,9 +175,9 @@ export default function ContactsPage() {
             contacts.map((contact) => (
               <div
                 key={contact._id}
-                className={`relative rounded-2xl p-6 border transition-all duration-200 ${
+                className={`relative min-w-0 rounded-2xl p-4 sm:p-6 border transition-all duration-200 ${
                   contact.status === 'NEW'
-                    ? 'bg-white border-blue-200 shadow-[0_4px_20px_-4px_rgba(59,130,246,0.1)]'
+                    ? 'bg-white border-blue-200 shadow-[0_4px_20px_-4px_rgba(140,90,43,0.12)]'
                     : 'bg-slate-50 border-slate-200/60'
                 }`}
               >
@@ -188,16 +188,16 @@ export default function ContactsPage() {
                   </span>
                 )}
 
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-lg">{contact.name}</h3>
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900 text-lg break-words">{contact.name}</h3>
                     <div className="flex items-center gap-1.5 text-slate-500 text-sm mt-1">
-                      <Mail size={14} />
-                      <a href={`mailto:${contact.email}`} className="hover:text-blue-600 hover:underline">{contact.email}</a>
+                      <Mail size={14} className="shrink-0" />
+                      <a href={`mailto:${contact.email}`} className="min-w-0 break-all hover:text-blue-600 hover:underline">{contact.email}</a>
                     </div>
                     {contact.phone && (
                       <div className="flex items-center gap-1.5 text-slate-500 text-sm mt-1">
-                        <Phone size={14} />
+                        <Phone size={14} className="shrink-0" />
                         <a href={`tel:${contact.phone}`} className="hover:text-blue-600 hover:underline">{contact.phone}</a>
                       </div>
                     )}

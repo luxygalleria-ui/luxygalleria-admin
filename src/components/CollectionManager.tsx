@@ -197,7 +197,7 @@ export default function CollectionManager({
           <button
             onClick={saveDetails}
             disabled={loading || savingDetails}
-            className="bg-[#2563eb] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
+            className="bg-[#8C5A2B] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
           >
             {savingDetails ? 'Saving...' : 'Save Details'}
           </button>
@@ -226,7 +226,7 @@ export default function CollectionManager({
             <button
               onClick={saveList}
               disabled={loading || saving || !isDirty}
-              className="bg-[#2563eb] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
+              className="bg-[#8C5A2B] hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-[12px] font-medium text-[14px] transition-colors shadow-sm"
             >
               {saving ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
             </button>
@@ -252,7 +252,7 @@ export default function CollectionManager({
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => move(index, -1)} disabled={index === 0} aria-label={`Move ${p.name} up`} className="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30">↑</button>
                       <button onClick={() => move(index, 1)} disabled={index === collectionIds.length - 1} aria-label={`Move ${p.name} down`} className="w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30">↓</button>
-                      <button onClick={() => setEditing(p as CreatedProduct)} disabled={saving} className="ml-2 px-3 h-8 rounded-lg text-[13px] font-medium text-[#2563eb] hover:bg-blue-50 disabled:opacity-30">Edit</button>
+                      <button onClick={() => setEditing(p as CreatedProduct)} disabled={saving} className="ml-2 px-3 h-8 rounded-lg text-[13px] font-medium text-[#8C5A2B] hover:bg-blue-50 disabled:opacity-30">Edit</button>
                       <button onClick={() => remove(p)} disabled={saving} className="px-3 h-8 rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50 disabled:opacity-30">Remove</button>
                     </div>
                   </li>

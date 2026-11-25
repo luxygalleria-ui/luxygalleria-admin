@@ -190,9 +190,9 @@ export default function OrdersPage() {
       case 'pending':
         return 'bg-[#fef3c7] text-[#d97706]';
       case 'processing':
-        return 'bg-[#e0e7ff] text-[#4f46e5]';
+        return 'bg-[#F0E4D1] text-[#6E4726]';
       case 'shipped':
-        return 'bg-[#dbeafe] text-[#2563eb]';
+        return 'bg-[#F0E4D1] text-[#8C5A2B]';
       case 'cancelled':
         return 'bg-[#fee2e2] text-[#dc2626]';
       default:
@@ -317,8 +317,8 @@ export default function OrdersPage() {
             <h2 className="text-[16px] font-medium text-slate-800">All Orders</h2>
             {historyEnabled && (
               <div className="inline-flex rounded-[10px] border border-slate-200 p-1 text-[13px] font-semibold" role="group" aria-label="Order data source">
-                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
-                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#eff6ff] text-[#2563eb]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
+                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
+                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
               </div>
             )}
           </div>
@@ -328,7 +328,7 @@ export default function OrdersPage() {
               <p className="text-lg font-medium">{loadError ? 'Could not load orders (the API request failed).' : 'No orders yet'}</p>
               <p className="text-sm mt-2">{historyError || (loadError ? 'Check that the backend is running.' : 'Orders will appear here once customers place them.')}</p>
               {loadError && (
-                <button onClick={() => fetchOrders(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#eff6ff] text-[#2563eb] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
+                <button onClick={() => fetchOrders(source)} className="mt-4 px-4 py-2 rounded-[10px] bg-[#FAF6F0] text-[#8C5A2B] text-[14px] font-semibold hover:bg-blue-100 transition-colors">Retry</button>
               )}
             </div>
           ) : (
@@ -394,11 +394,11 @@ export default function OrdersPage() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => { setSelectedOrder(order._id); setCorrection({ to: '', reason: '' }); }}
-                            className="text-[#3b82f6] hover:text-blue-700 transition-colors flex items-center justify-center p-2 rounded-full hover:bg-blue-50"
+                            className="text-[#8C5A2B] hover:text-blue-700 transition-colors flex items-center justify-center p-2 rounded-full hover:bg-blue-50"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                           </button>
-                          {/* Server still enforces superadmin + unpaid/failed; rejections show as a toast */}
+                          {/* Any order; the server archives a copy first. Errors show as a toast */}
                           {!readOnly && <button
                             onClick={() => handleDeleteClick(order._id)}
                             className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
@@ -593,7 +593,7 @@ export default function OrdersPage() {
                       <div className="flex flex-col gap-0.5 flex-1">
                         <p className="font-bold text-[#111827] text-[14px] leading-snug">
                           {item.name || item.product?.name || 'Product unavailable'}
-                          {item.size && <span className="text-xs text-[#2563eb] font-semibold ml-1.5 font-sans">({item.size})</span>}
+                          {item.size && <span className="text-xs text-[#8C5A2B] font-semibold ml-1.5 font-sans">({item.size})</span>}
                         </p>
                         <p className="text-[13px] text-slate-500 font-medium">{item.quantity} × {inr(item.price)}</p>
                         <p className="font-bold text-[#111827] text-[14px] mt-1">{inr(item.subtotal ?? item.price * item.quantity)}</p>
@@ -630,7 +630,7 @@ export default function OrdersPage() {
             {/* Total Footer */}
             <div className="px-6 lg:px-8 py-6 shrink-0 flex items-center justify-between border-t border-slate-100">
               <span className="text-[16px] font-bold text-[#111827]">Total Amount:</span>
-              <span className="text-[18px] font-bold text-[#2563eb]">{inr(activeOrder.total)}</span>
+              <span className="text-[18px] font-bold text-[#8C5A2B]">{inr(activeOrder.total)}</span>
             </div>
           </div>
         )}
@@ -645,7 +645,7 @@ export default function OrdersPage() {
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
             </div>
             <h3 className="text-[20px] font-bold text-[#111827] text-center mb-2">Delete Order?</h3>
-            <p className="text-[15px] text-slate-600 text-center mb-6">Are you sure you want to delete this order? This action cannot be undone.</p>
+            <p className="text-[15px] text-slate-600 text-center mb-6">It disappears from the orders list and the dashboard figures (a paid order also leaves revenue). A copy is kept on the server; a paid order not yet shipped returns its stock.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteModal({ isOpen: false, orderId: null })}
