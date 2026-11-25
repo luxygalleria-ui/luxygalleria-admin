@@ -17,6 +17,8 @@ export default function FaqsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // A failed load is shown as such (with Retry), never as "No FAQs found"
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, faqId: string | null }>({ isOpen: false, faqId: null });
@@ -29,6 +31,7 @@ export default function FaqsPage() {
 
   const fetchFaqs = async () => {
     try {
+      setLoadError(null);
       const token = localStorage.getItem('adminToken');
       const res = await axios.get(`/faqs/admin`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -38,8 +41,10 @@ export default function FaqsPage() {
         setFaqs(data.data);
       }
     } catch (err) {
+      if (isUnauthenticated(err)) return;
       console.error('Failed to fetch FAQs', err);
-      if (!isUnauthenticated(err)) toast.error(`Could not load FAQs: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
+      setLoadError((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || 'Could not reach the server');
+      toast.error(`Could not load FAQs: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
     } finally {
       setLoading(false);
     }
@@ -107,7 +112,9 @@ export default function FaqsPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error connecting to backend');
+      // The server's own reason (e.g. "The question cannot be empty"); only a missing reply is a connection problem
+      const r = (err as { response?: { data?: { message?: string } } }).response;
+      toast.error(r ? r.data?.message || 'Failed to save FAQ' : 'Error connecting to backend');
     } finally {
       setSaving(false);
     }
@@ -173,6 +180,11 @@ export default function FaqsPage() {
               <tbody>
                 {loading ? (
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">Loading FAQs...</td></tr>
+                ) : loadError ? (
+                  <tr><td colSpan={5} className="py-8 text-center text-red-600">
+                    FAQs could not be loaded: {loadError}{' '}
+                    <button type="button" onClick={() => { setLoading(true); fetchFaqs(); }} className="ml-2 min-h-[44px] px-3 font-semibold underline">Retry</button>
+                  </td></tr>
                 ) : faqs.length === 0 ? (
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">No FAQs found. Add your first FAQ!</td></tr>
                 ) : faqs.map((faq) => (

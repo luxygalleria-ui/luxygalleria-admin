@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from '../../../services/apiClient';
 import { toast } from 'react-hot-toast';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
+import { inr } from '../../../lib/money';
 
 interface OrderItem {
   product: {
@@ -15,6 +16,9 @@ interface OrderItem {
   };
   quantity: number;
   price: number;
+  /** Snapshot taken at checkout: what was sold, even if the product was renamed or deleted since */
+  name?: string;
+  subtotal?: number;
   image?: string;
   size?: string;
 }
@@ -355,7 +359,7 @@ export default function OrdersPage() {
                         </div>
                       </td>
                       <td data-label="Items" className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
-                      <td data-label="Total" className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
+                      <td data-label="Total" className="py-5 px-6 font-bold text-[#111827] text-[15px]">{inr(order.total)}</td>
                       <td data-label="Status" className="py-5 px-4 sm:px-6">
                         {readOnly ? (
                           <span className={`inline-flex items-center px-3 py-1.5 rounded-[6px] text-[12px] sm:text-[13px] font-bold tracking-wide capitalize ${getStatusStyle(order.orderStatus)}`}>{order.orderStatus}</span>
@@ -484,7 +488,7 @@ export default function OrdersPage() {
                     {refundable(activeOrder) && (isSuperadmin ? (
                       <button type="button" onClick={() => setRefundDialog({ order: activeOrder, reason: '', confirmRef: '' })}
                         className="h-[38px] px-4 rounded-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700">
-                        {activeOrder.refund?.status === 'requested' || activeOrder.refund?.status === 'failed' ? 'Retry refund' : 'Refund'} ₹{activeOrder.total}
+                        {activeOrder.refund?.status === 'requested' || activeOrder.refund?.status === 'failed' ? 'Retry refund' : 'Refund'} {inr(activeOrder.total)}
                       </button>
                     ) : (
                       <p className="text-[12px] text-slate-500">Only a super admin can issue refunds.</p>
@@ -571,14 +575,14 @@ export default function OrdersPage() {
                         {item.image ? (
                           <img 
                             src={getImageUrl(item.image)} 
-                            alt={item.product?.name || 'Product variant'} 
+                            alt={item.name || item.product?.name || 'Product variant'} 
                             className="w-full h-full object-cover" 
                             onError={handleImageError}
                           />
                         ) : item.product?.images?.[0] ? (
                           <img 
                             src={getImageUrl(item.product.images[0])} 
-                            alt={item.product?.name} 
+                            alt={item.name || item.product?.name || 'Product'} 
                             className="w-full h-full object-cover" 
                             onError={handleImageError}
                           />
@@ -588,11 +592,11 @@ export default function OrdersPage() {
                       </div>
                       <div className="flex flex-col gap-0.5 flex-1">
                         <p className="font-bold text-[#111827] text-[14px] leading-snug">
-                          {item.product?.name || 'Product unavailable'}
+                          {item.name || item.product?.name || 'Product unavailable'}
                           {item.size && <span className="text-xs text-[#2563eb] font-semibold ml-1.5 font-sans">({item.size})</span>}
                         </p>
-                        <p className="text-[13px] text-slate-500 font-medium">x{item.quantity}</p>
-                        <p className="font-bold text-[#111827] text-[14px] mt-1">₹{item.price}</p>
+                        <p className="text-[13px] text-slate-500 font-medium">{item.quantity} × {inr(item.price)}</p>
+                        <p className="font-bold text-[#111827] text-[14px] mt-1">{inr(item.subtotal ?? item.price * item.quantity)}</p>
                       </div>
                     </div>
                   ))}
@@ -603,20 +607,20 @@ export default function OrdersPage() {
               <div>
                 <h3 className="text-[16px] font-bold text-[#111827] mb-3">Price Breakdown</h3>
                 <div className="space-y-2 text-[14px] text-slate-700 font-medium">
-                  <div className="flex justify-between"><span>Subtotal:</span><span>₹{activeOrder.subtotal}</span></div>
+                  <div className="flex justify-between"><span>Subtotal:</span><span>{inr(activeOrder.subtotal)}</span></div>
                   {activeOrder.discount > 0 && (
-                    <div className="flex justify-between text-green-600"><span>Discount:</span><span>-₹{activeOrder.discount}</span></div>
+                    <div className="flex justify-between text-green-600"><span>Discount:</span><span>-{inr(activeOrder.discount)}</span></div>
                   )}
                   {activeOrder.fulfillmentMethod === 'pickup' ? (
-                    <div className="flex justify-between"><span>Store pickup:</span><span>{(activeOrder.pickupFee ?? 0) > 0 ? `₹${activeOrder.pickupFee}` : 'Free'}</span></div>
+                    <div className="flex justify-between"><span>Store pickup:</span><span>{(activeOrder.pickupFee ?? 0) > 0 ? inr(activeOrder.pickupFee) : 'Free'}</span></div>
                   ) : (
-                    <div className="flex justify-between"><span>Shipping:</span><span>{activeOrder.shippingFee > 0 ? `₹${activeOrder.shippingFee}` : 'Free'}</span></div>
+                    <div className="flex justify-between"><span>Shipping:</span><span>{activeOrder.shippingFee > 0 ? inr(activeOrder.shippingFee) : 'Free'}</span></div>
                   )}
                   {(activeOrder.specialPackagingFee ?? 0) > 0 && (
-                    <div className="flex justify-between"><span>Special packaging:</span><span>₹{activeOrder.specialPackagingFee}</span></div>
+                    <div className="flex justify-between"><span>Special packaging:</span><span>{inr(activeOrder.specialPackagingFee)}</span></div>
                   )}
                   {activeOrder.tax?.enabled && (
-                    <div className="flex justify-between text-slate-500"><span>GST {activeOrder.tax.pricesIncludeTax ? '(included)' : '(added)'}:</span><span>₹{activeOrder.tax.taxAmount}</span></div>
+                    <div className="flex justify-between text-slate-500"><span>GST {activeOrder.tax.pricesIncludeTax ? '(included)' : '(added)'}:</span><span>{inr(activeOrder.tax.taxAmount)}</span></div>
                   )}
                 </div>
               </div>
@@ -626,7 +630,7 @@ export default function OrdersPage() {
             {/* Total Footer */}
             <div className="px-6 lg:px-8 py-6 shrink-0 flex items-center justify-between border-t border-slate-100">
               <span className="text-[16px] font-bold text-[#111827]">Total Amount:</span>
-              <span className="text-[18px] font-bold text-[#2563eb]">₹{activeOrder.total}</span>
+              <span className="text-[18px] font-bold text-[#2563eb]">{inr(activeOrder.total)}</span>
             </div>
           </div>
         )}
