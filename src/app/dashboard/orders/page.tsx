@@ -394,8 +394,8 @@ export default function OrdersPage() {
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                           </button>
-                          {/* Superadmin only, unpaid or failed orders only (the server enforces the same) */}
-                          {!readOnly && isSuperadmin && ['pending', 'failed'].includes(order.paymentStatus) && <button
+                          {/* Server still enforces superadmin + unpaid/failed; rejections show as a toast */}
+                          {!readOnly && <button
                             onClick={() => handleDeleteClick(order._id)}
                             className="w-[36px] h-[36px] rounded-[10px] bg-[#fef2f2] text-[#ef4444] hover:bg-red-100 flex items-center justify-center transition-colors"
                             title="Delete Order"
