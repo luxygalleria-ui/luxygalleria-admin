@@ -270,7 +270,7 @@ export default function VideoTestimonialsPage() {
         {/* Left Column: Video Testimonials List */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
           
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <div>
               <h2 className="text-[18px] font-bold text-slate-900">Video Testimonials</h2>
               <p className="text-[13px] text-slate-500 mt-1">Manage video testimonials and drag rows to change their display order on the homepage.</p>
@@ -285,7 +285,7 @@ export default function VideoTestimonialsPage() {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="stack-table w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[5%] text-center">Sort</th>
@@ -329,14 +329,14 @@ export default function VideoTestimonialsPage() {
                     }`}
                   >
                     {/* Drag Handle */}
-                    <td className="py-4 px-6 text-center cursor-grab active:cursor-grabbing">
+                    <td data-label="Sort" className="py-4 px-6 text-center cursor-grab active:cursor-grabbing">
                       <div className="flex justify-center text-slate-400 hover:text-[#8B5E34] transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
                       </div>
                     </td>
 
                     {/* Video Thumbnail and Client Details */}
-                    <td className="py-4 px-6">
+                    <td data-label="Video / Client" className="py-4 px-6">
                       <div className="flex items-center gap-4">
                         <div className="relative group shrink-0 w-[80px] h-[45px] rounded-[6px] overflow-hidden bg-slate-100 border border-slate-200">
                           <img 
@@ -362,7 +362,7 @@ export default function VideoTestimonialsPage() {
                     </td>
 
                     {/* YouTube URL Link */}
-                    <td className="py-4 px-6 text-[13px] text-slate-600 truncate max-w-[250px]">
+                    <td data-label="YouTube URL" className="py-4 px-6 text-[13px] text-slate-600 truncate max-w-[250px]">
                       <a 
                         href={testimonial.youtubeUrl} 
                         target="_blank" 
@@ -375,12 +375,12 @@ export default function VideoTestimonialsPage() {
                     </td>
 
                     {/* Display Order */}
-                    <td className="py-4 px-6 text-center text-[14px] font-bold text-slate-700">
+                    <td data-label="Order" className="py-4 px-6 text-center text-[14px] font-bold text-slate-700">
                       {testimonial.displayOrder}
                     </td>
 
                     {/* Toggle Switch Status */}
-                    <td className="py-4 px-6 text-center">
+                    <td data-label="Status" className="py-4 px-6 text-center">
                       <button 
                         onClick={() => handleToggleActive(testimonial)}
                         className={`inline-flex items-center justify-center px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-wide uppercase cursor-pointer hover:opacity-85 transition-opacity ${getStatusStyle(testimonial.isActive)}`}
@@ -391,7 +391,7 @@ export default function VideoTestimonialsPage() {
                     </td>
 
                     {/* Actions */}
-                    <td className="py-4 px-6 text-center">
+                    <td data-label="Actions" className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => handleEditClick(testimonial)}

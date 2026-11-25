@@ -24,3 +24,23 @@
     @apply mt-1.5 block min-h-10 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-[#8B5E34] focus:ring-2 focus:ring-[#8B5E34]/15;
   }
 }
+
+/* Data tables on phones: each row becomes a labelled card (cells carry data-label), so no column is cut off.
+   Unlayered, so it wins over Tailwind utilities such as min-w-[800px]. */
+@media (max-width: 767px) {
+  .stack-table { min-width: 0; }
+  .stack-table thead { display: none; }
+  .stack-table tbody, .stack-table tr, .stack-table td { display: block; width: 100%; }
+  .stack-table tr { padding: 0.75rem 0; }
+  .stack-table td {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    padding: 0.375rem 0.25rem; text-align: right; overflow-wrap: anywhere; min-width: 0;
+  }
+  .stack-table td::before {
+    content: attr(data-label); flex-shrink: 0; text-align: left;
+    font-size: 12px; font-weight: 600; color: #64748b;
+  }
+  .stack-table td > * { min-width: 0; }
+  .stack-table td:not([data-label]) { display: block; text-align: center; }
+  .stack-table td:not([data-label])::before { display: none; }
+}

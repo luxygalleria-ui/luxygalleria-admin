@@ -18,7 +18,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false); // a failed request must not look like an empty list
   // 'history' = read-only production history (local development only); 'local' = this database
-  const [source, setSource] = useState<'history' | 'local'>('history');
+  const [source, setSource] = useState<'history' | 'local'>('local'); // same default as Orders: history (local dev only) is opt-in, never a 404 on every visit
   const [historyEnabled, setHistoryEnabled] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const readOnly = source === 'history';
@@ -143,7 +143,7 @@ export default function CustomersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="stack-table w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[25%]">Name</th>
@@ -157,16 +157,16 @@ export default function CustomersPage() {
               <tbody>
                 {customers.map((customer) => (
                   <tr key={customer._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{customer.name}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden · {customer.orderCount ?? 0} orders</span> : customer.email}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden</span> : customer.phone || '—'}</td>
-                    <td className="py-5 px-6 text-[14px] text-slate-500 font-medium">{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '—'}</td>
-                    <td className="py-5 px-6">
+                    <td data-label="Name" className="py-5 px-6 font-bold text-[#111827] text-[15px]">{customer.name}</td>
+                    <td data-label="Email" className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden · {customer.orderCount ?? 0} orders</span> : customer.email}</td>
+                    <td data-label="Phone" className="py-5 px-6 text-[15px] text-slate-700 font-medium">{readOnly ? <span className="text-slate-400 text-[13px]">Hidden</span> : customer.phone || '—'}</td>
+                    <td data-label="Joined" className="py-5 px-6 text-[14px] text-slate-500 font-medium">{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '—'}</td>
+                    <td data-label="Status" className="py-5 px-6">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${getStatusStyle(customer.isActive)}`}>
                         {customer.isActive ? 'ACTIVE' : 'BLOCKED'}
                       </span>
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Actions" className="py-5 px-6">
                       {readOnly ? <span className="text-[13px] text-slate-400 font-medium">Read-only</span> : (
                       <div className="flex items-center gap-2">
                         <button 

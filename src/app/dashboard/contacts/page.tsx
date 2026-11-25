@@ -132,7 +132,7 @@ export default function ContactsPage() {
               <button
                 key={f.key}
                 onClick={() => setStatusFilter(f.key)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                className={`min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                   statusFilter === f.key
                     ? 'bg-[#8B5E34] text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'

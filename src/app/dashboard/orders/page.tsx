@@ -329,7 +329,7 @@ export default function OrdersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[800px]">
+              <table className="stack-table w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="bg-[#f8fafc]">
                     <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[15%]">ID</th>
@@ -344,19 +344,19 @@ export default function OrdersPage() {
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order._id} className={`border-b border-slate-100 last:border-0 transition-colors ${order.testPayment ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-slate-50/50'}`}>
-                      <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">
+                      <td data-label="ID" className="py-5 px-6 font-bold text-[#111827] text-[15px]">
                         #{order._id.substring(0, 8)}
                         {order.testPayment && <div className="mt-1"><TestBadge /></div>}
                       </td>
-                      <td className="py-5 px-6">
+                      <td data-label="Customer" className="py-5 px-6">
                         <div className="flex flex-col">
                           <span className="font-bold text-[#111827] text-[14px] leading-tight mb-0.5">{order.user?.name || 'Unknown'}</span>
                           <span className="text-slate-500 text-[13px]">{readOnly ? '' : order.user?.email || ''}</span>
                         </div>
                       </td>
-                      <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
-                      <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
-                      <td className="py-5 px-4 sm:px-6">
+                      <td data-label="Items" className="py-5 px-6 text-[15px] text-[#111827] font-medium">{order.items.length} items</td>
+                      <td data-label="Total" className="py-5 px-6 font-bold text-[#111827] text-[15px]">₹{order.total}</td>
+                      <td data-label="Status" className="py-5 px-4 sm:px-6">
                         {readOnly ? (
                           <span className={`inline-flex items-center px-3 py-1.5 rounded-[6px] text-[12px] sm:text-[13px] font-bold tracking-wide capitalize ${getStatusStyle(order.orderStatus)}`}>{order.orderStatus}</span>
                         ) : (
@@ -365,7 +365,7 @@ export default function OrdersPage() {
                             value={order.orderStatus}
                             onChange={(e) => handleStatusChange(order._id, e.target.value)}
                             disabled={updatingOrderId === order._id}
-                            className="appearance-none pl-3 pr-8 py-1.5 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer disabled:cursor-not-allowed"
+                            className="appearance-none pl-3 pr-8 py-1.5 min-h-[44px] md:min-h-0 min-w-[110px] bg-transparent text-inherit text-[12px] sm:text-[13px] font-bold tracking-wide outline-none cursor-pointer disabled:cursor-not-allowed"
                           >
                             <option value="processing" disabled={!canMoveStatus(order.orderStatus, 'processing')} className="text-slate-800">Processing</option>
                             <option value="shipped" disabled={shipBlocked(order, 'shipped') || !canMoveStatus(order.orderStatus, 'shipped')} className="text-slate-800">Shipped</option>
@@ -385,8 +385,8 @@ export default function OrdersPage() {
                         </div>
                         )}
                       </td>
-                      <td className="py-5 px-6 text-[15px] text-[#111827] font-medium">{formatDate(order.createdAt)}</td>
-                      <td className="py-5 px-6">
+                      <td data-label="Date" className="py-5 px-6 text-[15px] text-[#111827] font-medium">{formatDate(order.createdAt)}</td>
+                      <td data-label="Actions" className="py-5 px-6">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => { setSelectedOrder(order._id); setCorrection({ to: '', reason: '' }); }}

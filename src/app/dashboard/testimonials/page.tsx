@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from '../../../services/apiClient';
+import axios, { isUnauthenticated } from '../../../services/apiClient';
 import { getImageUrl } from '../../../lib/imageUtils';
 
 interface ITestimonial {
@@ -41,6 +41,7 @@ export default function TestimonialsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch testimonials', err);
+      if (!isUnauthenticated(err)) toast.error(`Could not load testimonials: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
     } finally {
       setLoading(false);
     }
@@ -184,7 +185,7 @@ export default function TestimonialsPage() {
         {/* Left Column: Testimonials List */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
           
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <h2 className="text-[16px] font-medium text-slate-800">Client Testimonials</h2>
             <button 
               onClick={handleAddClick}
@@ -196,7 +197,7 @@ export default function TestimonialsPage() {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="stack-table w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[25%]">Client</th>
@@ -213,7 +214,7 @@ export default function TestimonialsPage() {
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">No reviews found. Add your first review!</td></tr>
                 ) : testimonials.map((testimonial) => (
                   <tr key={testimonial._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-6">
+                    <td data-label="Client" className="py-5 px-6">
                       <div className="flex items-center gap-3">
                         {testimonial.imageUrl ? (
                           <img src={getImageUrl(testimonial.imageUrl)} alt={testimonial.clientName} className="w-[40px] h-[40px] rounded-full object-cover shrink-0" />
@@ -228,18 +229,18 @@ export default function TestimonialsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug">
+                    <td data-label="Review" className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug">
                       {testimonial.review}
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Rating" className="py-5 px-6">
                       {renderStars(testimonial.rating)}
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Status" className="py-5 px-6">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${getStatusStyle(testimonial.status)}`}>
                         {testimonial.status}
                       </span>
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Actions" className="py-5 px-6">
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => handleEditClick(testimonial)}

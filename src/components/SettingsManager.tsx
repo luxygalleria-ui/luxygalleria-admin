@@ -139,7 +139,7 @@ export default function SettingsManager() {
             type="text"
             value={settings.whatsappNumber}
             onChange={e => setSettings({ ...settings, whatsappNumber: e.target.value })}
-            className="w-full border rounded px-3 py-2"
+            className="w-full min-h-[44px] border rounded px-3 py-2"
             placeholder="e.g., 917736989068"
           />
           {errors.whatsappNumber && <p className="text-xs text-red-600 mt-1">{errors.whatsappNumber}</p>}

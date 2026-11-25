@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import axios from '../../../services/apiClient';
+import axios, { isUnauthenticated } from '../../../services/apiClient';
 import { getImageUrl, handleImageError } from '../../../lib/imageUtils';
 import { parseWeightFromVolume, missingWeightMessage, variantWeightKg } from '../../../lib/productWeight';
 
@@ -116,6 +116,7 @@ export default function ProductsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch categories', err);
+      if (!isUnauthenticated(err)) toast.error(`Could not load categories: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
     }
   };
 
@@ -128,6 +129,7 @@ export default function ProductsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch brands', err);
+      if (!isUnauthenticated(err)) toast.error(`Could not load brands: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
     }
   };
 

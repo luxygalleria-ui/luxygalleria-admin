@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import axios from '../../../services/apiClient';
+import axios, { isUnauthenticated } from '../../../services/apiClient';
 
 interface IFaq {
   _id: string;
@@ -39,6 +39,7 @@ export default function FaqsPage() {
       }
     } catch (err) {
       console.error('Failed to fetch FAQs', err);
+      if (!isUnauthenticated(err)) toast.error(`Could not load FAQs: ${(err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (err as { message?: string })?.message || 'server unreachable'}`);
     } finally {
       setLoading(false);
     }
@@ -147,7 +148,7 @@ export default function FaqsPage() {
         {/* Left Column: FAQs List */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <h2 className="text-[16px] font-medium text-slate-800">Frequently Asked Questions</h2>
             <button
               onClick={handleAddClick}
@@ -159,7 +160,7 @@ export default function FaqsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="stack-table w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[30%]">Question</th>
@@ -176,21 +177,21 @@ export default function FaqsPage() {
                   <tr><td colSpan={5} className="py-8 text-center text-slate-500">No FAQs found. Add your first FAQ!</td></tr>
                 ) : faqs.map((faq) => (
                   <tr key={faq._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">
+                    <td data-label="Question" className="py-5 px-6 font-bold text-[#111827] text-[15px]">
                       {faq.question}
                     </td>
-                    <td className="py-5 px-6 text-[14px] text-slate-700 font-medium leading-snug line-clamp-3">
+                    <td data-label="Answer" className="py-5 px-6 text-[14px] text-slate-700 font-medium leading-snug line-clamp-3">
                       {faq.answer}
                     </td>
-                    <td className="py-5 px-6 font-bold text-slate-700">
+                    <td data-label="Order" className="py-5 px-6 font-bold text-slate-700">
                       {faq.order}
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Status" className="py-5 px-6">
                       <span className={`inline-flex items-center justify-center px-3 py-1 rounded-[6px] text-[11px] font-bold tracking-wide uppercase ${faq.isActive ? 'bg-[#dcfce7] text-[#16a34a]' : 'bg-[#fee2e2] text-[#dc2626]'}`}>
                         {faq.isActive ? 'ACTIVE' : 'INACTIVE'}
                       </span>
                     </td>
-                    <td className="py-5 px-6">
+                    <td data-label="Actions" className="py-5 px-6">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleEditClick(faq)}

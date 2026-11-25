@@ -183,7 +183,7 @@ export default function BannersPage() {
         {/* Left Column: Banners Catalog */}
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <h2 className="text-[16px] font-medium text-slate-800">Homepage Banners</h2>
             <button
               onClick={handleAddClick}
@@ -195,7 +195,7 @@ export default function BannersPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="stack-table w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8fafc]">
                   <th className="py-4 px-6 text-[13px] font-semibold text-slate-500 rounded-l-[12px] w-[35%]">Preview</th>
@@ -211,7 +211,7 @@ export default function BannersPage() {
                   <tr><td colSpan={4} className="py-8 text-center text-slate-500">{loadError ? 'Could not load banners (the API request failed). Reload to try again.' : 'No banners found. Add your first banner!'}</td></tr>
                 ) : banners.map((banner) => (
                   <tr key={banner._id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-5 px-6">
+                    <td data-label="Preview" className="py-5 px-6">
                       <div className="flex gap-3">
                         <div className="flex flex-col gap-1">
                           <span className="text-[10px] text-slate-500 font-semibold uppercase">Laptop</span>
@@ -234,9 +234,9 @@ export default function BannersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-5 px-6 font-bold text-[#111827] text-[15px]">{banner.title}</td>
-                    <td className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug" style={{ whiteSpace: 'pre-line' }}>{banner.description}</td>
-                    <td className="py-5 px-6">
+                    <td data-label="Title" className="py-5 px-6 font-bold text-[#111827] text-[15px]">{banner.title}</td>
+                    <td data-label="Description" className="py-5 px-6 text-[15px] text-slate-700 font-medium leading-snug" style={{ whiteSpace: 'pre-line' }}>{banner.description}</td>
+                    <td data-label="Actions" className="py-5 px-6">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleEditClick(banner)}
