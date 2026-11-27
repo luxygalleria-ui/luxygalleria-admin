@@ -228,7 +228,7 @@ export default function FaqsPage() {
 
         {/* Right Column: Add/Edit FAQ Form */}
         {isAddOpen && (
-          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
+          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-6 overflow-hidden flex flex-col xl:max-h-[calc(100vh-148px)] transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-6 lg:px-8 py-6 shrink-0 border-b border-slate-100/60">
               <h2 className="text-[20px] font-bold text-[#111827]">

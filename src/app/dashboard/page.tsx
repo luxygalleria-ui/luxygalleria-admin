@@ -201,24 +201,24 @@ export default function DashboardPage() {
         </p>
       )}
 
-      {/* Responsive Stats Grid: 1 col on mobile, 2 col on tablet, 4 col on large desktop (7 cards: 4 + 3) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* 1 col mobile, 2 cols tablet/laptop, 4 cols only once there is room (xl+) so values never clip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         {cards.map((card, idx) => (
-          <div key={idx} className="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4 sm:gap-5 border border-slate-100/60">
+          <div key={idx} className="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-6 2xl:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4 border border-slate-100/60 min-w-0">
             <div className={`w-[52px] h-[52px] sm:w-[60px] sm:h-[60px] rounded-[16px] sm:rounded-[18px] ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0`}>
               {card.icon}
             </div>
-            <div className="flex flex-col gap-0.5 sm:gap-1 min-w-0">
-              <span className="text-[14px] sm:text-[15px] font-semibold text-slate-500 truncate">{card.label}</span>
-              <span className="text-[24px] sm:text-[28px] lg:text-[32px] font-bold text-[#111827] leading-none truncate">{card.value}</span>
-              {card.note && <span className="text-[12px] font-medium text-slate-400 leading-snug">{card.note}</span>}
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <span className="text-[14px] sm:text-[15px] font-semibold text-slate-500 leading-snug break-words">{card.label}</span>
+              <span className="text-[22px] sm:text-[24px] 2xl:text-[30px] font-bold text-[#111827] leading-tight break-all">{card.value}</span>
+              {card.note && <span className="text-[12px] font-medium text-slate-400 leading-snug break-words">{card.note}</span>}
             </div>
           </div>
         ))}
       </div>
 
       {stats && (
-        <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="mt-6 sm:mt-8 grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
           <OrderStatusPanel stats={stats} />
           <RevenueChart days={stats.revenueByDay} />
         </div>
@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
       {/* Recent Transactions Section */}
       <div className="mt-6 sm:mt-8 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60">
-        <div className="flex items-center justify-between mb-5 sm:mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-5 sm:mb-6">
           <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">Recent Transactions</h2>
           <a href="/dashboard/orders" className="text-[14px] sm:text-[15px] font-bold text-[#8C5A2B] hover:text-blue-700 py-1 px-2 rounded-lg hover:bg-blue-50 transition-colors">
             View All
@@ -282,9 +282,9 @@ export default function DashboardPage() {
                     {order.orderStatus}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600 font-medium truncate max-w-[200px]">{order.user?.name || 'Unknown'}</span>
-                  <span className="font-bold text-[#111827]">{inr(num(order.total))}</span>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-slate-600 font-medium min-w-0 break-words">{order.user?.name || 'Unknown'}</span>
+                  <span className="font-bold text-[#111827] shrink-0">{inr(num(order.total))}</span>
                 </div>
                 <div className="text-[12px] text-slate-400">
                   {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
@@ -312,7 +312,7 @@ function OrderStatusPanel({ stats }: { stats: DashboardStats }) {
   const byStatus = stats.ordersByStatus;
   const total = byStatus ? Object.values(byStatus).reduce((a, b) => a + (Number(b) || 0), 0) : 0;
   return (
-    <section className="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60">
+    <section className="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 min-w-0">
       <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827] mb-5">Orders by status</h2>
       {!byStatus ? (
         <p className="text-sm text-slate-500">Not provided by the API.</p>
@@ -357,7 +357,7 @@ function RevenueChart({ days }: { days: DashboardStats['revenueByDay'] }) {
   const total = days ? days.reduce((a, d) => a + d.revenue, 0) : 0;
   const label = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
   return (
-    <section className="lg:col-span-2 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 min-w-0">
+    <section className="xl:col-span-2 bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-7 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 min-w-0">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
         <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">Revenue, last 30 days</h2>
         {days && <span className="text-[14px] font-semibold text-slate-500">{inr(total)} · paid, not cancelled</span>}

@@ -401,7 +401,7 @@ export default function OrdersPage() {
 
         {/* Right Column: Order Details Form */}
         {activeOrder && (
-          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[0px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
+          <div className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[24px] xl:sticky xl:top-6 overflow-hidden flex flex-col xl:max-h-[calc(100vh-148px)] transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-6 lg:px-8 py-6 shrink-0">
               <h2 className="text-[22px] font-bold text-[#111827]">Order Details</h2>

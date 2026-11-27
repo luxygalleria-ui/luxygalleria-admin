@@ -474,7 +474,7 @@ export default function ProductsPage() {
       <div className="flex flex-col xl:flex-row gap-6 items-start">
 
         {/* Left Column: Product Catalog */}
-        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300 xl:max-h-[calc(100vh-140px)] overflow-y-auto">
+        <div className="flex-1 min-w-0 bg-white rounded-[24px] p-4 sm:p-6 lg:p-8 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 w-full transition-all duration-300">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8">
             <h2 className="text-[18px] font-semibold text-slate-800">Product Catalog</h2>
             {!isAddProductOpen ? (
@@ -606,7 +606,7 @@ export default function ProductsPage() {
 
         {/* Right Column: Add/Edit Product Form */}
         {isAddProductOpen && (
-          <div ref={formRef} className="w-full xl:w-[480px] shrink-0 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col xl:max-h-[calc(100vh-140px)] transition-all duration-300">
+          <div ref={formRef} className="w-full xl:w-[480px] shrink-0 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-slate-100/60 rounded-[24px] xl:sticky xl:top-6 overflow-hidden flex flex-col xl:max-h-[calc(100vh-148px)] transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 shrink-0">
               <h2 className="text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Product' : 'Add New Product'}</h2>

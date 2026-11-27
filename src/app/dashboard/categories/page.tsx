@@ -304,7 +304,7 @@ export default function CategoriesPage() {
 
         {/* Right Column: Add/Edit Category Form */}
         {isAddCategoryOpen && (
-          <div ref={formRef} className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[20px] sm:rounded-[24px] xl:sticky xl:top-[120px] overflow-hidden flex flex-col p-5 sm:p-7 lg:p-8 transition-all duration-300">
+          <div ref={formRef} className="w-full xl:w-[420px] shrink-0 bg-white shadow-sm border border-slate-100/60 rounded-[20px] sm:rounded-[24px] xl:sticky xl:top-6 overflow-hidden flex flex-col p-5 sm:p-7 lg:p-8 transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 sm:mb-8">
               <h2 className="text-[18px] sm:text-[20px] font-bold text-[#111827]">{editingId ? 'Edit Category' : 'Add New Category'}</h2>
