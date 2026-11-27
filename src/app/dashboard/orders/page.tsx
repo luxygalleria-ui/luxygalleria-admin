@@ -25,14 +25,6 @@ interface OrderItem {
 
 /** Stored payment status -> label. "completed" is set only by server-side Razorpay verification (or the webhook). */
 const PAYMENT_LABEL: Record<string, string> = { pending: 'Pending', completed: 'Paid', failed: 'Failed', refunded: 'Refunded' };
-// ICICI UAT test orders (testPayment, set by the server): no money was received
-const TEST_ORDER_BADGE = 'UAT TEST — NO MONEY RECEIVED — DO NOT SHIP';
-const TestBadge = () => (
-  <span data-testid="uat-test-badge" className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-[11px] font-extrabold tracking-wide uppercase bg-red-600 text-white">
-    {TEST_ORDER_BADGE}
-  </span>
-);
-
 interface Order {
   _id: string;
   user: {
@@ -101,7 +93,6 @@ export default function OrdersPage() {
   // 'history' = read-only production history (local development only); 'local' = this database
   // This database first: it holds the orders admins act on (and new checkouts); production history is a read-only view
   const [source, setSource] = useState<'history' | 'local'>('local');
-  const [historyEnabled, setHistoryEnabled] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const readOnly = source === 'history';
   // Display only: the backend allows status corrections to superadmins alone, whatever the browser claims
@@ -147,7 +138,6 @@ export default function OrdersPage() {
       }
     } catch (err: any) {
       if (from === 'history' && err.response?.status === 404 && err.response?.data?.errors?.[0]?.code === 'HISTORY_DISABLED') {
-        setHistoryEnabled(false); // history not configured: this database is the only source
         setSource('local');
         return;
       }
@@ -315,12 +305,6 @@ export default function OrdersPage() {
         <div className="flex-1 min-w-0 bg-white rounded-[24px] p-6 lg:p-8 shadow-sm border border-slate-100/60 w-full transition-all duration-300">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[16px] font-medium text-slate-800">All Orders</h2>
-            {historyEnabled && (
-              <div className="inline-flex rounded-[10px] border border-slate-200 p-1 text-[13px] font-semibold" role="group" aria-label="Order data source">
-                <button onClick={() => setSource('history')} aria-pressed={source === 'history'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'history' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>Production history (read-only)</button>
-                <button onClick={() => setSource('local')} aria-pressed={source === 'local'} className={`px-3 py-1.5 rounded-[8px] transition-colors ${source === 'local' ? 'bg-[#FAF6F0] text-[#8C5A2B]' : 'text-slate-500 hover:bg-slate-50'}`}>This database</button>
-              </div>
-            )}
           </div>
 
           {orders.length === 0 ? (
@@ -347,10 +331,9 @@ export default function OrdersPage() {
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <tr key={order._id} className={`border-b border-slate-100 last:border-0 transition-colors ${order.testPayment ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-slate-50/50'}`}>
+                    <tr key={order._id} className={`border-b border-slate-100 last:border-0 transition-colors hover:bg-slate-50/50`}>
                       <td data-label="ID" className="py-5 px-6 font-bold text-[#111827] text-[15px]">
                         #{order._id.substring(0, 8)}
-                        {order.testPayment && <div className="mt-1"><TestBadge /></div>}
                       </td>
                       <td data-label="Customer" className="py-5 px-6">
                         <div className="flex flex-col">
@@ -444,7 +427,6 @@ export default function OrdersPage() {
                       {activeOrder.orderStatus}
                     </span>
                   </div>
-                  {activeOrder.testPayment && <div className="py-1"><TestBadge /></div>}
                   <p>Date: {formatFullDate(activeOrder.createdAt)}</p>
                   {activeOrder.updatedAt && <p>Updated: {formatFullDate(activeOrder.updatedAt)}</p>}
                   <p>Payment: {activeOrder.paymentMethod}</p>
