@@ -210,7 +210,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <span className="text-[14px] sm:text-[15px] font-semibold text-slate-500 leading-snug break-words">{card.label}</span>
-              <span className="text-[22px] sm:text-[24px] 2xl:text-[30px] font-bold text-[#111827] leading-tight break-all">{card.value}</span>
+              <span className="text-[22px] sm:text-[24px] xl:text-[20px] 2xl:text-[28px] font-bold text-[#111827] leading-tight whitespace-nowrap tabular-nums">{card.value}</span>
               {card.note && <span className="text-[12px] font-medium text-slate-400 leading-snug break-words">{card.note}</span>}
             </div>
           </div>
